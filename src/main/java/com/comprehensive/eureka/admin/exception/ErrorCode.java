@@ -6,6 +6,9 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum ErrorCode {
+
+    INTERNAL_SERVER_ERROR(60000, "INTERNAL_SERVER_ERROR",  "서버 내부 오류가 발생했습니다."),
+
     // 금칙어 관리 에러 (60010~60019)
     FORBIDDEN_WORD_NOT_FOUND       (60010, "FORBIDDEN_WORD_NOT_FOUND",       "해당 금칙어를 찾을 수 없습니다."),
     FORBIDDEN_WORD_ALREADY_EXISTS  (60011, "FORBIDDEN_WORD_ALREADY_EXISTS",  "이미 등록된 금칙어입니다."),
