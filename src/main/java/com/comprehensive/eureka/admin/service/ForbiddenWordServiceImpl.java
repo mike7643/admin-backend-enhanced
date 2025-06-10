@@ -113,11 +113,11 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
         try {
             forbiddenWordRepository.delete(fw);
 
-            webClient.delete()
+/*            webClient.delete()
                     .uri("/api/badwords/{word}", word)
                     .retrieve()
                     .bodyToMono(Void.class)
-                    .block();
+                    .block();*/
         } catch (Exception ex) {
             throw new AdminException(ErrorCode.FORBIDDEN_WORD_DELETE_FAILED);
         }
