@@ -7,6 +7,7 @@ import com.comprehensive.eureka.admin.exception.AdminException;
 import com.comprehensive.eureka.admin.exception.ErrorCode;
 import com.comprehensive.eureka.admin.repository.ForbiddenWordRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -14,6 +15,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ForbiddenWordServiceImpl implements ForbiddenWordService {
@@ -30,18 +32,15 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
         if (used != null && value != null) {
             // 상태 + 단어 필터
             entities = forbiddenWordRepository.findByStatusAndWord(used, value);
-        }
-        else if (used != null) {
+        } else if (used != null) {
             // 상태만 필터
             entities = forbiddenWordRepository.findByStatus(used);
-        }
-        else if (value != null) {
+        } else if (value != null) {
             // 단어만 필터
             entities = forbiddenWordRepository.findByWord(value)
                     .map(List::of)
                     .orElseThrow(() -> new AdminException(ErrorCode.FORBIDDEN_WORD_NOT_FOUND));
-        }
-        else {
+        } else {
             // 필터 없을 때
             entities = forbiddenWordRepository.findAll();
         }
@@ -62,10 +61,12 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
     @Override
     @Transactional
     public ForbiddenWordResponseDto addForbiddenWord(ForbiddenWordRequestDto requestDto) {
-        System.out.println("ForbiddenWordServiceImpl.addForbiddenWord");
+        log.info("Adding forbidden word: {}", requestDto);
         String word = requestDto.getWord().trim();
+        log.info("Word: {}", word);
 
         if (forbiddenWordRepository.existsByWord(word)) {
+            log.info("AdminException");
             throw new AdminException(ErrorCode.FORBIDDEN_WORD_ALREADY_EXISTS);
         }
 
@@ -87,15 +88,18 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
                     .block();
 
 */
+            log.info("saved: {}", saved);
         } catch (Exception ex) {
+            log.info("AdminException");
             throw new AdminException(ErrorCode.FORBIDDEN_WORD_CREATE_FAILED);
         }
 
-        return new ForbiddenWordResponseDto(
+        ForbiddenWordResponseDto forbiddenWordResponseDto = new ForbiddenWordResponseDto(
                 saved.getId(),
                 saved.getWord(),
-                saved.isStatus()
-        );
+                saved.isStatus());
+        log.info("forbiddenWordResponseDto: {}", forbiddenWordResponseDto);
+        return forbiddenWordResponseDto;
     }
 
     @Override
