@@ -46,7 +46,7 @@ public class ForbiddenWordController {
      * 금칙어 사용여부 토글
      */
     @PatchMapping("/{wordId}/status-change")
-    public ResponseEntity<BaseResponseDto<ForbiddenWordResponseDto>> toggleStatus(
+    public ResponseEntity<BaseResponseDto> toggleStatus(
             @PathVariable("wordId") Long id
     ) {
         ForbiddenWordResponseDto dto = forbiddenWordService.toggleForbiddenWordStatus(id);
