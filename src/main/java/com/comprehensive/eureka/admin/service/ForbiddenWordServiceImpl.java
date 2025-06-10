@@ -97,6 +97,27 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
 
     @Override
     @Transactional
+    public void deleteForbiddenWord(Long id) {
+        ForbiddenWord fw = forbiddenWordRepository.findById(id)
+                .orElseThrow(() -> new AdminException(ErrorCode.FORBIDDEN_WORD_NOT_FOUND));
+
+        String word = fw.getWord();
+
+        try {
+            forbiddenWordRepository.delete(fw);
+
+            webClient.delete()
+                    .uri("/api/badwords/{word}", word)
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .block();
+        } catch (Exception ex) {
+            throw new AdminException(ErrorCode.FORBIDDEN_WORD_DELETE_FAILED);
+        }
+    }
+
+    @Override
+    @Transactional
     public ForbiddenWordResponseDto toggleForbiddenWordStatus(Long id) {
         ForbiddenWord fw = forbiddenWordRepository.findById(id)
                 .orElseThrow(() -> new AdminException(ErrorCode.FORBIDDEN_WORD_NOT_FOUND));
