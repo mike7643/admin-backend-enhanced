@@ -85,4 +85,20 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
                 saved.isStatus()
         );
     }
+
+    @Override
+    @Transactional
+    public ForbiddenWordResponseDto toggleForbiddenWordStatus(Long id) {
+        ForbiddenWord fw = forbiddenWordRepository.findById(id)
+                .orElseThrow(() -> new AdminException(ErrorCode.FORBIDDEN_WORD_NOT_FOUND));
+
+        fw.setStatus(!fw.isStatus());
+        ForbiddenWord updated = forbiddenWordRepository.save(fw);
+
+        return new ForbiddenWordResponseDto(
+                updated.getId(),
+                updated.getWord(),
+                updated.isStatus()
+        );
+    }
 }

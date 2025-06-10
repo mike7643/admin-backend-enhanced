@@ -9,4 +9,6 @@ public interface ForbiddenWordService {
     ForbiddenWordResponseDto addForbiddenWord(ForbiddenWordRequestDto dto);
 
     List<ForbiddenWordResponseDto> getForbiddenWords(Boolean used, String value);
+
+    ForbiddenWordResponseDto toggleForbiddenWordStatus(Long id);
 }
