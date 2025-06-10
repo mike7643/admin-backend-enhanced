@@ -6,20 +6,21 @@ import com.comprehensive.eureka.admin.entity.ForbiddenWord;
 import com.comprehensive.eureka.admin.exception.AdminException;
 import com.comprehensive.eureka.admin.exception.ErrorCode;
 import com.comprehensive.eureka.admin.repository.ForbiddenWordRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ForbiddenWordServiceImpl implements ForbiddenWordService {
 
     private final ForbiddenWordRepository forbiddenWordRepository;
+    private final WebClient webClient;
 
-    public ForbiddenWordServiceImpl(ForbiddenWordRepository forbiddenWordRepository) {
-        this.forbiddenWordRepository = forbiddenWordRepository;
-    }
 
     @Override
     @Transactional(readOnly = true)
@@ -75,6 +76,14 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
                             .status(requestDto.isUsed())
                             .build()
             );
+
+            webClient.post()
+                    .uri("/chatbot/api/badwords")
+                    .bodyValue(requestDto)
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .block();
+
         } catch (Exception ex) {
             throw new AdminException(ErrorCode.FORBIDDEN_WORD_CREATE_FAILED);
         }
@@ -84,6 +93,27 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
                 saved.getWord(),
                 saved.isStatus()
         );
+    }
+
+    @Override
+    @Transactional
+    public void deleteForbiddenWord(Long id) {
+        ForbiddenWord fw = forbiddenWordRepository.findById(id)
+                .orElseThrow(() -> new AdminException(ErrorCode.FORBIDDEN_WORD_NOT_FOUND));
+
+        String word = fw.getWord();
+
+        try {
+            forbiddenWordRepository.delete(fw);
+
+            webClient.delete()
+                    .uri("/api/badwords/{word}", word)
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .block();
+        } catch (Exception ex) {
+            throw new AdminException(ErrorCode.FORBIDDEN_WORD_DELETE_FAILED);
+        }
     }
 
     @Override

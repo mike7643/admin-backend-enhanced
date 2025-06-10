@@ -10,5 +10,7 @@ public interface ForbiddenWordService {
 
     List<ForbiddenWordResponseDto> getForbiddenWords(Boolean used, String value);
 
+    void deleteForbiddenWord(Long id);
+
     ForbiddenWordResponseDto toggleForbiddenWordStatus(Long id);
 }

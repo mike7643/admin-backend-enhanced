@@ -42,6 +42,19 @@ public class ForbiddenWordController {
         return ResponseEntity.ok(BaseResponseDto.success(list));
     }
 
+
+    /**
+     * 금칙어 삭제
+     */
+    @DeleteMapping("/{wordId}")
+    public ResponseEntity<BaseResponseDto<Void>> deleteForbiddenWord(
+            @PathVariable("wordId") Long wordId
+    ) {
+        forbiddenWordService.deleteForbiddenWord(wordId);
+        return ResponseEntity.ok(BaseResponseDto.voidSuccess());
+    }
+
+
     /**
      * 금칙어 사용여부 토글
      */
