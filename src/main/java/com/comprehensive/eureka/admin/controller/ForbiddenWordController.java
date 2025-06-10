@@ -24,6 +24,7 @@ public class ForbiddenWordController {
     public ResponseEntity<BaseResponseDto> addForbiddenWord(
             @RequestBody ForbiddenWordRequestDto requestDto
     ) {
+        System.out.println("ForbiddenWordController.addForbiddenWord");
         ForbiddenWordResponseDto saved = forbiddenWordService.addForbiddenWord(requestDto);
         return ResponseEntity.ok(BaseResponseDto.success(saved));
     }
@@ -47,7 +48,7 @@ public class ForbiddenWordController {
      * 금칙어 삭제
      */
     @DeleteMapping("/{wordId}")
-    public ResponseEntity<BaseResponseDto<Void>> deleteForbiddenWord(
+    public ResponseEntity<BaseResponseDto> deleteForbiddenWord(
             @PathVariable("wordId") Long wordId
     ) {
         forbiddenWordService.deleteForbiddenWord(wordId);

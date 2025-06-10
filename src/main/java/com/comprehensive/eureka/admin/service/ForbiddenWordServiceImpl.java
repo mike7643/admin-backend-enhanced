@@ -62,6 +62,7 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
     @Override
     @Transactional
     public ForbiddenWordResponseDto addForbiddenWord(ForbiddenWordRequestDto requestDto) {
+        System.out.println("ForbiddenWordServiceImpl.addForbiddenWord");
         String word = requestDto.getWord().trim();
 
         if (forbiddenWordRepository.existsByWord(word)) {
@@ -76,14 +77,16 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
                             .status(requestDto.isUsed())
                             .build()
             );
+/*
 
             webClient.post()
-                    .uri("/chatbot/api/badwords")
+                    .uri("/api/badwords")
                     .bodyValue(requestDto)
                     .retrieve()
                     .bodyToMono(Void.class)
                     .block();
 
+*/
         } catch (Exception ex) {
             throw new AdminException(ErrorCode.FORBIDDEN_WORD_CREATE_FAILED);
         }
