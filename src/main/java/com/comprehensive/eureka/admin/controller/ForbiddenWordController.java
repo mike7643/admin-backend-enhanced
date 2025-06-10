@@ -41,5 +41,15 @@ public class ForbiddenWordController {
         List<ForbiddenWordResponseDto> list = forbiddenWordService.getForbiddenWords(used, value);
         return ResponseEntity.ok(BaseResponseDto.success(list));
     }
-}
 
+    /**
+     * 금칙어 사용여부 토글
+     */
+    @PatchMapping("/{wordId}/status-change")
+    public ResponseEntity<BaseResponseDto<ForbiddenWordResponseDto>> toggleStatus(
+            @PathVariable("wordId") Long id
+    ) {
+        ForbiddenWordResponseDto dto = forbiddenWordService.toggleForbiddenWordStatus(id);
+        return ResponseEntity.ok(BaseResponseDto.success(dto));
+    }
+}
