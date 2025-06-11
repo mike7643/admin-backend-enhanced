@@ -19,4 +19,9 @@ public interface UserForbiddenWordsChatService {
      * 단일 금칙어 ID로 한 건씩 저장
      */
     void registersUserBadWordsChat(UserForbiddenWordsChatCreateRequestDto request);
+
+    /**
+     * 특정 사용자의 누적 금칙어 수 조회
+     */
+    long countByUserId(Long userId);
 }

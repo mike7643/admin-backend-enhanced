@@ -12,4 +12,6 @@ public interface UserForbiddenWordsChatRepository
 
 
     List<UserForbiddenWordsChat> findByUserIdIn(List<Long> userIds);
+
+    long countByUserId(Long userId);
 }

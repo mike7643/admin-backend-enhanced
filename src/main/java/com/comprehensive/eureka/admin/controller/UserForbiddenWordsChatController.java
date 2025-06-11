@@ -47,4 +47,15 @@ public class UserForbiddenWordsChatController {
         service.registersUserBadWordsChat(request);
         return BaseResponseDto.voidSuccess();
     }
+
+
+    /**
+     * GET /admin/forbidden-words/chats/count?userId={userId}
+     * → 특정 사용자의 누적 금칙어 위반 횟수 조회
+     */
+    @GetMapping("/count")
+    public BaseResponseDto<Long> count(@RequestParam("userId") Long userId) {
+        long total = service.countByUserId(userId);
+        return BaseResponseDto.success(total);
+    }
 }

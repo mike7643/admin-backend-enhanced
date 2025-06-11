@@ -100,4 +100,19 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
             throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_SAVE_FAILED);
         }
     }
+
+    /**
+     * 사용자의 금칙어 누적 집계
+     * @param userId
+     * @return
+     */
+    @Override
+    public long countByUserId(Long userId) {
+        try {
+            return chatRepository.countByUserId(userId);
+        } catch (Exception ex) {
+            log.error("금칙어 로그 집계 실패, userId={}", userId, ex);
+            throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_AGGREGATE_FAILED);
+        }
+    }
 }
