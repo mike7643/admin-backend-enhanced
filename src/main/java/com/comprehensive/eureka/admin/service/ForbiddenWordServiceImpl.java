@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,15 +40,11 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
             // 단어만 필터
             entities = forbiddenWordRepository.findByWord(value)
                     .map(List::of)
-                    .orElseThrow(() -> new AdminException(ErrorCode.FORBIDDEN_WORD_NOT_FOUND));
+                    .orElse(Collections.emptyList());
         }
         else {
             // 필터 없을 때
             entities = forbiddenWordRepository.findAll();
-        }
-
-        if (entities.isEmpty()) {
-            throw new AdminException(ErrorCode.FORBIDDEN_WORD_NOT_FOUND);
         }
 
         return entities.stream()
@@ -77,7 +74,7 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
                             .status(requestDto.isUsed())
                             .build()
             );
-/*
+/* 정민님 api 연결예정
 
             webClient.post()
                     .uri("/api/badwords")

@@ -5,15 +5,12 @@ import com.comprehensive.eureka.admin.dto.request.ForbiddenWordRequestDto;
 import com.comprehensive.eureka.admin.dto.response.ForbiddenWordResponseDto;
 import com.comprehensive.eureka.admin.service.ForbiddenWordService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Slf4j
 @RestController
-@RequestMapping("/admin/forbidden-words")
 @RequiredArgsConstructor
 public class ForbiddenWordController {
 
@@ -26,9 +23,7 @@ public class ForbiddenWordController {
     public ResponseEntity<BaseResponseDto> addForbiddenWord(
             @RequestBody ForbiddenWordRequestDto requestDto
     ) {
-        log.info("addForbiddenWord: {}", requestDto);
         ForbiddenWordResponseDto saved = forbiddenWordService.addForbiddenWord(requestDto);
-        log.info("addForbiddenWord: {}", saved);
         return ResponseEntity.ok(BaseResponseDto.success(saved));
     }
 
