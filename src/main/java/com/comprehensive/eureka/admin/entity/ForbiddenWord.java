@@ -17,9 +17,6 @@ public class ForbiddenWord {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * 금칙어 단어 (중복 방지)
-     */
     @Column(nullable = false, unique = true)
     private String word;
 
