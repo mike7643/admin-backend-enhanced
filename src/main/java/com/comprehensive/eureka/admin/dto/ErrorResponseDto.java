@@ -1,4 +1,4 @@
-package com.comprehensive.eureka.admin.dto.response;
+package com.comprehensive.eureka.admin.dto;
 
 import com.comprehensive.eureka.admin.exception.ErrorCode;
 import lombok.Builder;
