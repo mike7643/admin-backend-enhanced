@@ -7,6 +7,7 @@ import com.comprehensive.eureka.admin.exception.AdminException;
 import com.comprehensive.eureka.admin.exception.ErrorCode;
 import com.comprehensive.eureka.admin.repository.ForbiddenWordRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -20,7 +21,9 @@ import java.util.stream.Collectors;
 public class ForbiddenWordServiceImpl implements ForbiddenWordService {
 
     private final ForbiddenWordRepository forbiddenWordRepository;
-    private final WebClient webClient;
+
+    @Qualifier("chatbotClient")
+    private final WebClient chatbotClient;
 
 
     @Override
@@ -74,16 +77,14 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
                             .status(requestDto.isUsed())
                             .build()
             );
-/* 정민님 api 연결예정
 
-            webClient.post()
-                    .uri("/api/badwords")
+            chatbotClient.post()
+                    .uri("/chatbot/api/badwords")
                     .bodyValue(requestDto)
                     .retrieve()
                     .bodyToMono(Void.class)
                     .block();
 
-*/
 
         } catch (Exception ex) {
             throw new AdminException(ErrorCode.FORBIDDEN_WORD_CREATE_FAILED);
@@ -107,11 +108,11 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
         try {
             forbiddenWordRepository.delete(fw);
 
-/*            webClient.delete()
-                    .uri("/api/badwords/{word}", word)
+            chatbotClient.delete()
+                    .uri("/chatbot/api/badwords/{word}", word)
                     .retrieve()
                     .bodyToMono(Void.class)
-                    .block();*/
+                    .block();
         } catch (Exception ex) {
             throw new AdminException(ErrorCode.FORBIDDEN_WORD_DELETE_FAILED);
         }
