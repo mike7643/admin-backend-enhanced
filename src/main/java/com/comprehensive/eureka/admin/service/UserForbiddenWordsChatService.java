@@ -8,7 +8,7 @@ import java.util.List;
 public interface UserForbiddenWordsChatService {
 
     /**
-     * 이름 또는 이메일(searchWord)로 User 검색 → 사용자 금칙어 채팅 기록 조회
+     * 이름 또는 이메일(searchWord)로 User 검색 -> 사용자 금칙어 채팅 기록 조회
      *
      * @param searchWord 검색 키워드 (이름 또는 이메일)
      * @return 사용자 금칙어 채팅 기록 목록 DTO
@@ -24,4 +24,10 @@ public interface UserForbiddenWordsChatService {
      * 특정 사용자의 누적 금칙어 수 조회
      */
     long countByUserId(Long userId);
+
+    /**
+     * 단일 금칙어 로그 삭제 후
+     * 누적 위반 횟수 재계산 -> 정책에 따라 사용자 상태 갱신
+     */
+    void deleteAndProcess(Long chatLogId);
 }

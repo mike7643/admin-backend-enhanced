@@ -58,4 +58,18 @@ public class UserForbiddenWordsChatController {
         long total = service.countByUserId(userId);
         return BaseResponseDto.success(total);
     }
+
+
+    /**
+     * DELETE /admin/forbidden-words/chats/{chatLogId}
+     * - 단일 금칙어 로그 삭제
+     * - 삭제 후 남은 위반 횟수 변화에 따라 차단 해제 API 호출
+     */
+    @DeleteMapping("/{chatLogId}")
+    public BaseResponseDto<Void> deleteAndProcess(
+            @PathVariable Long chatLogId
+    ) {
+        service.deleteAndProcess(chatLogId);
+        return BaseResponseDto.voidSuccess();
+    }
 }
