@@ -9,14 +9,18 @@ import com.comprehensive.eureka.admin.repository.UserForbiddenWordsChatRepositor
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * 사용자 금칙어 채팅 기록 조회 서비스 구현체
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -28,25 +32,20 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
     @Qualifier("userClient")
     private final WebClient userClient;
 
+    @Value("${services.base-url}")
+    private String baseUrl;
+
     /**
      * 이름 또는 이메일(searchWord)로 User 검색 → 사용자 ID 목록으로 로그 조회
      */
+    @Override
     public List<UserForbiddenWordsChatDto> findByUserSearchWord(String searchWord) {
-        log.info("findByUserSearchWord: {}", searchWord);
         List<UserInfoResponseDto> users;
         try {
-
-            String fullUrl = UriComponentsBuilder
-                    .fromUriString("${services.base-url}")
-                    .path("/user/search")
-                    .queryParam("searchWord", searchWord)
-                    .build()
-                    .toString();
-
-            log.info(">>> User-Service 호출 URL: {}", fullUrl);
-
             users = userClient.get()
-                    .uri(uri -> uri.path("/user/search").queryParam("searchWord", searchWord).build())
+                    .uri(uri -> uri.path("/user/search")
+                            .queryParam("searchWord", searchWord)
+                            .build())
                     .retrieve()
                     .bodyToFlux(UserInfoResponseDto.class)
                     .collectList()
@@ -56,7 +55,7 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
         }
 
         if (users == null || users.isEmpty()) {
-            throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_NOT_FOUND);
+            return Collections.emptyList();
         }
 
         List<Long> userIds = users.stream()
@@ -71,8 +70,8 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
             throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_RETRIEVE_FAILED);
         }
 
-        if (logs == null || logs.isEmpty()) {
-            throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_NOT_FOUND);
+        if (logs.isEmpty()) {
+            return Collections.emptyList();
         }
 
         return logs.stream()
