@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.comprehensive.eureka.admin.dto.BaseResponseDto;
-import com.comprehensive.eureka.admin.dto.response.ErrorResponseDto;
+import com.comprehensive.eureka.admin.dto.ErrorResponseDto;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -27,7 +27,6 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<BaseResponseDto<ErrorResponseDto>> handleException(Exception ex) {
-        // 필요하다면 별도 INTERNAL_SERVER_ERROR 코드 정의 후 사용
         ErrorCode ec = ErrorCode.INTERNAL_SERVER_ERROR;
         return ResponseEntity
                 .status(500)
