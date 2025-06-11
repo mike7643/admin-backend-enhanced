@@ -13,7 +13,7 @@ public class WebClientConfig {
     @Qualifier("chatbotClient")
     public WebClient chatbotClient(WebClient.Builder builder) {
         return builder
-                .baseUrl("${services.chatbot.base-url}")
+                .baseUrl("${services.base-url}")
                 .build();
     }
 
@@ -21,7 +21,7 @@ public class WebClientConfig {
     @Qualifier("userClient")
     public WebClient userClient(WebClient.Builder builder) {
         return builder
-                .baseUrl("${services.user.base-url}")
+                .baseUrl("${services.base-url}")
                 .build();
     }
 }

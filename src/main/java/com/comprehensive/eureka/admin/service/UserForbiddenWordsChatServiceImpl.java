@@ -35,7 +35,7 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
         List<UserInfoResponseDto> users;
         try {
             users = userClient.get()
-                    .uri(uri -> uri.path("/search").queryParam("searchWord", searchWord).build())
+                    .uri(uri -> uri.path("/user/search").queryParam("searchWord", searchWord).build())
                     .retrieve()
                     .bodyToFlux(UserInfoResponseDto.class)
                     .collectList()
