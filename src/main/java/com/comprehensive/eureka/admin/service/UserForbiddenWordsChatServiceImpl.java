@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,6 +35,16 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
         log.info("findByUserSearchWord: {}", searchWord);
         List<UserInfoResponseDto> users;
         try {
+
+            String fullUrl = UriComponentsBuilder
+                    .fromUriString("${services.base-url}")
+                    .path("/user/search")
+                    .queryParam("searchWord", searchWord)
+                    .build()
+                    .toString();
+
+            log.info(">>> User-Service 호출 URL: {}", fullUrl);
+
             users = userClient.get()
                     .uri(uri -> uri.path("/user/search").queryParam("searchWord", searchWord).build())
                     .retrieve()
