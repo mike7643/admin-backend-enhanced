@@ -3,12 +3,10 @@ package com.comprehensive.eureka.admin.controller;
 
 import com.comprehensive.eureka.admin.dto.BaseResponseDto;
 import com.comprehensive.eureka.admin.dto.UserForbiddenWordsChatDto;
+import com.comprehensive.eureka.admin.dto.request.UserForbiddenWordsChatCreateRequestDto;
 import com.comprehensive.eureka.admin.service.UserForbiddenWordsChatService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -28,5 +26,25 @@ public class UserForbiddenWordsChatController {
     ) {
         List<UserForbiddenWordsChatDto> dtos = service.findByUserSearchWord(searchWord);
         return BaseResponseDto.success(dtos);
+    }
+
+
+    /**
+     * POST /admin/forbidden-words/chats
+     * 단일 금칙어 로그 저장
+     *
+     * body:
+     * {
+     *   "userId": 1,
+     *   "chatMessageId": 42,
+     *   "forbiddenWordId": 10
+     * }
+     */
+    @PostMapping
+    public BaseResponseDto<Void> registersUserBadWordsChat(
+            @RequestBody UserForbiddenWordsChatCreateRequestDto request
+    ) {
+        service.registersUserBadWordsChat(request);
+        return BaseResponseDto.voidSuccess();
     }
 }

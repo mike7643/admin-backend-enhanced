@@ -27,7 +27,9 @@ public enum ErrorCode {
 
     // 사용자_금칙어_채팅 기록 삭제 및 집계 에러 (60040~60049)
     USER_FORBIDDEN_WORDS_CHAT_DELETE_FAILED(60040, "USER_FORBIDDEN_WORDS_CHAT_DELETE_FAILED", "사용자 금칙어 채팅 기록 삭제에 실패했습니다."),
-    USER_FORBIDDEN_WORDS_CHAT_AGGREGATE_FAILED(60041, "USER_FORBIDDEN_WORDS_CHAT_AGGREGATE_FAILED", "삭제 후 집계 호출에 실패했습니다.");
+    USER_FORBIDDEN_WORDS_CHAT_AGGREGATE_FAILED(60041, "USER_FORBIDDEN_WORDS_CHAT_AGGREGATE_FAILED", "삭제 후 집계 호출에 실패했습니다."),
+    // 사용자_금칙어_채팅 기록 저장 에러 (60042)
+    USER_FORBIDDEN_WORDS_CHAT_SAVE_FAILED(60042,"USER_FORBIDDEN_WORDS_CHAT_SAVE_FAILED","사용자 금칙어 채팅 기록 저장에 실패했습니다.");
 
     private final int code;
     private final String name;

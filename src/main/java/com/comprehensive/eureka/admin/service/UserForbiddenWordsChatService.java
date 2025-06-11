@@ -1,12 +1,10 @@
 package com.comprehensive.eureka.admin.service;
 
 import com.comprehensive.eureka.admin.dto.UserForbiddenWordsChatDto;
+import com.comprehensive.eureka.admin.dto.request.UserForbiddenWordsChatCreateRequestDto;
 
 import java.util.List;
 
-/**
- * 사용자 금칙어 채팅 기록 조회를 위한 서비스 인터페이스
- */
 public interface UserForbiddenWordsChatService {
 
     /**
@@ -16,4 +14,9 @@ public interface UserForbiddenWordsChatService {
      * @return 사용자 금칙어 채팅 기록 목록 DTO
      */
     List<UserForbiddenWordsChatDto> findByUserSearchWord(String searchWord);
+
+    /**
+     * 단일 금칙어 ID로 한 건씩 저장
+     */
+    void registersUserBadWordsChat(UserForbiddenWordsChatCreateRequestDto request);
 }

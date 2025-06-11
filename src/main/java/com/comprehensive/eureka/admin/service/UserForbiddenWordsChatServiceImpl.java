@@ -1,7 +1,9 @@
 package com.comprehensive.eureka.admin.service;
 
 import com.comprehensive.eureka.admin.dto.UserForbiddenWordsChatDto;
+import com.comprehensive.eureka.admin.dto.request.UserForbiddenWordsChatCreateRequestDto;
 import com.comprehensive.eureka.admin.dto.response.UserInfoResponseDto;
+import com.comprehensive.eureka.admin.entity.ForbiddenWord;
 import com.comprehensive.eureka.admin.entity.UserForbiddenWordsChat;
 import com.comprehensive.eureka.admin.exception.AdminException;
 import com.comprehensive.eureka.admin.exception.ErrorCode;
@@ -18,25 +20,20 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * 사용자 금칙어 채팅 기록 조회 서비스 구현체
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChatService {
 
-    private final UserForbiddenWordsChatRepository repository;
+    private final UserForbiddenWordsChatRepository chatRepository;
 
     @Qualifier("userClient")
     private final WebClient userClient;
 
-    @Value("${services.base-url}")
-    private String baseUrl;
 
     /**
-     * 이름 또는 이메일(searchWord)로 User 검색 → 사용자 ID 목록으로 로그 조회
+     * 이름 또는 이메일(searchWord)로 사용자 조회 → 해당 사용자들의 금칙어 채팅 기록 반환
      */
     @Override
     public List<UserForbiddenWordsChatDto> findByUserSearchWord(String searchWord) {
@@ -51,6 +48,7 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
                     .collectList()
                     .block();
         } catch (Exception ex) {
+            log.error("사용자 조회 실패", ex);
             throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_RETRIEVE_FAILED);
         }
 
@@ -65,8 +63,9 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
 
         List<UserForbiddenWordsChat> logs;
         try {
-            logs = repository.findByUserIdIn(userIds);
+            logs = chatRepository.findByUserIdIn(userIds);
         } catch (Exception ex) {
+            log.error("금칙어 채팅 기록 조회 실패", ex);
             throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_RETRIEVE_FAILED);
         }
 
@@ -77,5 +76,28 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
         return logs.stream()
                 .map(UserForbiddenWordsChatDto::from)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 단일 금칙어 ID로 한 건씩 저장
+     */
+    @Override
+    @Transactional
+    public void registersUserBadWordsChat(UserForbiddenWordsChatCreateRequestDto request) {
+        UserForbiddenWordsChat entity = UserForbiddenWordsChat.builder()
+                .userId(request.getUserId())
+                .chatMessageId(request.getChatMessageId())
+                .forbiddenWord(
+                        ForbiddenWord.builder()
+                                .id(request.getForbiddenWordId())
+                                .build()
+                )
+                .build();
+        try {
+            chatRepository.save(entity);
+        } catch (Exception ex) {
+            log.error("금칙어 채팅 기록 단건 저장 실패", ex);
+            throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_SAVE_FAILED);
+        }
     }
 }
