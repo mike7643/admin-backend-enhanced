@@ -1,5 +1,6 @@
 package com.comprehensive.eureka.admin.service;
 
+import com.comprehensive.eureka.admin.dto.BaseResponseDto;
 import com.comprehensive.eureka.admin.dto.UserForbiddenWordsChatDto;
 import com.comprehensive.eureka.admin.dto.request.UpdateUserStatusRequestDto;
 import com.comprehensive.eureka.admin.dto.request.UserForbiddenWordsChatCreateRequestDto;
@@ -13,9 +14,11 @@ import com.comprehensive.eureka.admin.repository.UserForbiddenWordsChatRepositor
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.util.Collections;
 import java.util.List;
@@ -41,20 +44,25 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
     public List<UserForbiddenWordsChatDto> findByUserSearchWord(String searchWord) {
         List<UserInfoResponseDto> users;
         try {
-            users = userClient.get()
-                    .uri(uri -> uri.path("/user/search")
+            Mono<BaseResponseDto<List<UserInfoResponseDto>>> respMono = userClient.get()
+                    .uri(uri -> uri
+                            .path("/user/search")
                             .queryParam("searchWord", searchWord)
                             .build())
                     .retrieve()
-                    .bodyToFlux(UserInfoResponseDto.class)
-                    .collectList()
-                    .block();
+                    .bodyToMono(new ParameterizedTypeReference<BaseResponseDto<List<UserInfoResponseDto>>>() {});
+
+            BaseResponseDto<List<UserInfoResponseDto>> baseResp = respMono.block();
+            users = (baseResp != null && baseResp.getData() != null)
+                    ? baseResp.getData()
+                    : Collections.emptyList();
+
         } catch (Exception ex) {
             log.error("사용자 조회 실패", ex);
             throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_RETRIEVE_FAILED);
         }
 
-        if (users == null || users.isEmpty()) {
+        if (users.isEmpty()) {
             return Collections.emptyList();
         }
 
@@ -79,6 +87,7 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
                 .map(UserForbiddenWordsChatDto::from)
                 .collect(Collectors.toList());
     }
+
 
     /**
      * 다중 금칙어 ID로 한 건씩 저장
