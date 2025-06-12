@@ -18,13 +18,13 @@ public class UserForbiddenWordsChatController {
     private final UserForbiddenWordsChatService service;
 
     /**
-     * GET /admin/forbidden-words/chats/search?searchWord={nameOrEmail}
+     * GET /admin/forbidden-words/chats?userId={userId}
      */
-    @GetMapping("/search")
-    public BaseResponseDto<List<UserForbiddenWordsChatDto>> search(
-            @RequestParam("searchWord") String searchWord
+    @GetMapping
+    public BaseResponseDto<List<UserForbiddenWordsChatDto>> getByUserId(
+            @RequestParam("userId") Long userId
     ) {
-        List<UserForbiddenWordsChatDto> dtos = service.findByUserSearchWord(searchWord);
+        List<UserForbiddenWordsChatDto> dtos = service.findByUserId(userId);
         return BaseResponseDto.success(dtos);
     }
 

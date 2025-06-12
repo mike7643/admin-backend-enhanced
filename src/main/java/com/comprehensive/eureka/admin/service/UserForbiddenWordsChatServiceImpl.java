@@ -38,48 +38,19 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
     private final WebClient userClient;
 
     /**
-     * 이름 또는 이메일(searchWord)로 사용자 조회 → 해당 사용자들의 금칙어 채팅 기록 반환
+     * 특정 사용자 ID로 금칙어 채팅 기록 조회
      */
     @Override
-    public List<UserForbiddenWordsChatDto> findByUserSearchWord(String searchWord) {
-        List<UserInfoResponseDto> users;
-        try {
-            Mono<BaseResponseDto<List<UserInfoResponseDto>>> respMono = userClient.get()
-                    .uri(uri -> uri
-                            .path("/user/search")
-                            .queryParam("searchWord", searchWord)
-                            .build())
-                    .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<BaseResponseDto<List<UserInfoResponseDto>>>() {});
-
-            BaseResponseDto<List<UserInfoResponseDto>> baseResp = respMono.block();
-            users = (baseResp != null && baseResp.getData() != null)
-                    ? baseResp.getData()
-                    : Collections.emptyList();
-
-        } catch (Exception ex) {
-            log.error("사용자 조회 실패", ex);
-            throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_RETRIEVE_FAILED);
-        }
-
-        if (users.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<Long> userIds = users.stream()
-                .map(UserInfoResponseDto::getId)
-                .distinct()
-                .collect(Collectors.toList());
-
+    public List<UserForbiddenWordsChatDto> findByUserId(Long userId) {
         List<UserForbiddenWordsChat> logs;
         try {
-            logs = chatRepository.findByUserIdIn(userIds);
+            logs = chatRepository.findByUserId(userId);
         } catch (Exception ex) {
-            log.error("금칙어 채팅 기록 조회 실패", ex);
+            log.error("금칙어 채팅 기록 조회 실패 (userId={})", userId, ex);
             throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_RETRIEVE_FAILED);
         }
 
-        if (logs.isEmpty()) {
+        if (logs == null || logs.isEmpty()) {
             return Collections.emptyList();
         }
 
@@ -87,7 +58,6 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
                 .map(UserForbiddenWordsChatDto::from)
                 .collect(Collectors.toList());
     }
-
 
     /**
      * 다중 금칙어 ID로 한 건씩 저장

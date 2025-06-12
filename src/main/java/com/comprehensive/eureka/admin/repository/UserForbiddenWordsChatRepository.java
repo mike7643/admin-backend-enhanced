@@ -8,9 +8,7 @@ import java.util.List;
 
 @Repository
 public interface UserForbiddenWordsChatRepository extends JpaRepository<UserForbiddenWordsChat, Long> {
-
-
-    List<UserForbiddenWordsChat> findByUserIdIn(List<Long> userIds);
+    List<UserForbiddenWordsChat> findByUserId(Long userId);
 
     long countByUserId(Long userId);
 }

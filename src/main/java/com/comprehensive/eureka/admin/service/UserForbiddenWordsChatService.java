@@ -7,13 +7,11 @@ import java.util.List;
 
 public interface UserForbiddenWordsChatService {
 
+
     /**
-     * 이름 또는 이메일(searchWord)로 User 검색 -> 사용자 금칙어 채팅 기록 조회
-     *
-     * @param searchWord 검색 키워드 (이름 또는 이메일)
-     * @return 사용자 금칙어 채팅 기록 목록 DTO
+     * 특정 사용자 ID로 금칙어 채팅 기록 조회
      */
-    List<UserForbiddenWordsChatDto> findByUserSearchWord(String searchWord);
+    List<UserForbiddenWordsChatDto> findByUserId(Long userId);
 
     /**
      * 단일 금칙어 ID로 한 건씩 저장
