@@ -16,6 +16,8 @@ public enum ErrorCode {
     FORBIDDEN_WORD_UPDATE_FAILED(60013, "FORBIDDEN_WORD_UPDATE_FAILED", "금칙어 수정에 실패했습니다."),
     FORBIDDEN_WORD_DELETE_FAILED(60014, "FORBIDDEN_WORD_DELETE_FAILED", "금칙어 삭제에 실패했습니다."),
     FORBIDDEN_WORD_TOGGLE_FAILED(60015, "FORBIDDEN_WORD_TOGGLE_FAILED", "금칙어 사용 여부 전환에 실패했습니다."),
+    FORBIDDEN_WORD_CHATBOT_ADD_FAILED(60016, "FORBIDDEN_WORD_CHATBOT_ADD_FAILED", "챗봇 모듈에 금칙어 추가 요청에 실패했습니다."),
+    FORBIDDEN_WORD_CHATBOT_DELETE_FAILED(60017, "FORBIDDEN_WORD_CHATBOT_DELETE_FAILED", "챗봇 모듈에 금칙어 삭제 요청에 실패했습니다."),
 
     // 금칙어 로그 관리 에러 (60020~60029)
     FORBIDDEN_WORD_LOG_NOT_FOUND(60020, "FORBIDDEN_WORD_LOG_NOT_FOUND", "해당 금칙어 로그를 찾을 수 없습니다."),
@@ -28,10 +30,11 @@ public enum ErrorCode {
     // 사용자_금칙어_채팅 기록 삭제 및 집계 에러 (60040~60049)
     USER_FORBIDDEN_WORDS_CHAT_DELETE_FAILED(60040, "USER_FORBIDDEN_WORDS_CHAT_DELETE_FAILED", "사용자 금칙어 채팅 기록 삭제에 실패했습니다."),
     USER_FORBIDDEN_WORDS_CHAT_AGGREGATE_FAILED(60041, "USER_FORBIDDEN_WORDS_CHAT_AGGREGATE_FAILED", "삭제 후 집계 호출에 실패했습니다."),
-    // 사용자_금칙어_채팅 기록 저장 에러 (60042)
-    USER_FORBIDDEN_WORDS_CHAT_SAVE_FAILED(60042,"USER_FORBIDDEN_WORDS_CHAT_SAVE_FAILED","사용자 금칙어 채팅 기록 저장에 실패했습니다."),
+    USER_FORBIDDEN_WORDS_CHAT_SAVE_FAILED(60042, "USER_FORBIDDEN_WORDS_CHAT_SAVE_FAILED", "사용자 금칙어 채팅 기록 저장에 실패했습니다."),
+
     // 사용자 상태 업데이트 에러 (60050~60059)
     USER_STATUS_UPDATE_FAILED(60050, "USER_STATUS_UPDATE_FAILED", "사용자 상태 업데이트에 실패했습니다.");
+
     private final int code;
     private final String name;
     private final String message;

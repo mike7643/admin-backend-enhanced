@@ -120,14 +120,42 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
         }
     }
 
+
     @Override
     @Transactional
     public ForbiddenWordResponseDto toggleForbiddenWordStatus(Long id) {
         ForbiddenWord fw = forbiddenWordRepository.findById(id)
                 .orElseThrow(() -> new AdminException(ErrorCode.FORBIDDEN_WORD_NOT_FOUND));
 
-        fw.setStatus(!fw.isStatus());
+        boolean newStatus = !fw.isStatus();
+        fw.setStatus(newStatus);
         ForbiddenWord updated = forbiddenWordRepository.save(fw);
+
+        try {
+            if (newStatus) {
+                // 사용함으로 전환 → BadwordToChatbotDto로 래핑하여 챗봇 모듈에 추가 요청
+                BadwordToChatbotDto dto = new BadwordToChatbotDto(updated.getWord());
+                chatbotClient.post()
+                        .uri("/chatbot/api/badwords")
+                        .bodyValue(dto)
+                        .retrieve()
+                        .bodyToMono(Void.class)
+                        .block();
+            } else {
+                // 사용 안 함으로 전환 → 챗봇 모듈에 삭제 요청
+                chatbotClient.delete()
+                        .uri("/chatbot/api/badwords/{word}", updated.getWord())
+                        .retrieve()
+                        .bodyToMono(Void.class)
+                        .block();
+            }
+        } catch (Exception ex) {
+            if (newStatus) {
+                throw new AdminException(ErrorCode.FORBIDDEN_WORD_CHATBOT_ADD_FAILED);
+            } else {
+                throw new AdminException(ErrorCode.FORBIDDEN_WORD_CHATBOT_DELETE_FAILED);
+            }
+        }
 
         return new ForbiddenWordResponseDto(
                 updated.getId(),
