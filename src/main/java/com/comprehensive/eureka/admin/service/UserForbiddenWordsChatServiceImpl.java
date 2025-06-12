@@ -1,10 +1,8 @@
 package com.comprehensive.eureka.admin.service;
 
-import com.comprehensive.eureka.admin.dto.BaseResponseDto;
 import com.comprehensive.eureka.admin.dto.UserForbiddenWordsChatDto;
 import com.comprehensive.eureka.admin.dto.request.UpdateUserStatusRequestDto;
 import com.comprehensive.eureka.admin.dto.request.UserForbiddenWordsChatCreateRequestDto;
-import com.comprehensive.eureka.admin.dto.response.UserInfoResponseDto;
 import com.comprehensive.eureka.admin.entity.UserForbiddenWordsChat;
 import com.comprehensive.eureka.admin.enums.Status;
 import com.comprehensive.eureka.admin.exception.AdminException;
@@ -14,11 +12,9 @@ import com.comprehensive.eureka.admin.repository.UserForbiddenWordsChatRepositor
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.util.Collections;
 import java.util.List;
@@ -88,8 +84,6 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
 
     /**
      * 사용자의 금칙어 누적 집계
-     * @param userId
-     * @return
      */
     @Override
     public long countByUserId(Long userId) {
@@ -101,6 +95,9 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
         }
     }
 
+    /**
+     * 금칙어 로그 삭제 후 언밴이 필요하면 처리
+     */
     @Override
     @Transactional
     public void deleteAndProcess(Long chatLogId) {
@@ -141,7 +138,7 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
             return;  // 해제 조건 아니면 종료
         }
 
-        // 5) 언밴(해제) API 호출: ACTIVE, unbanTime=null
+        // 5) 언밴 API 호출: ACTIVE, unbanTime=null
         UpdateUserStatusRequestDto req = UpdateUserStatusRequestDto.builder()
                 .userId(userId)
                 .status(Status.ACTIVE)
@@ -150,7 +147,7 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
 
         try {
             userClient.put()
-                    .uri("/admin/users/status")
+                    .uri("/user/status")
                     .bodyValue(req)
                     .retrieve()
                     .bodyToMono(Void.class)

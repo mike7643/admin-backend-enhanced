@@ -26,7 +26,9 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
     @Qualifier("chatbotClient")
     private final WebClient chatbotClient;
 
-
+    /**
+     * 금칙어 목록 조회 (사용 여부·단어 필터 지원)
+     */
     @Override
     @Transactional(readOnly = true)
     public List<ForbiddenWordResponseDto> getForbiddenWords(Boolean used, String value) {
@@ -60,6 +62,9 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 금칙어 추가 및 챗봇 모듈에 등록
+     */
     @Override
     @Transactional
     public ForbiddenWordResponseDto addForbiddenWord(ForbiddenWordRequestDto requestDto) {
@@ -99,6 +104,10 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
         );
     }
 
+
+    /**
+     * 금칙어 삭제 및 챗봇 모듈에서 제거
+     */
     @Override
     @Transactional
     public void deleteForbiddenWord(Long id) {
@@ -121,6 +130,9 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
     }
 
 
+    /**
+     * 금칙어 상태 토글 (DB 업데이트 + 챗봇 모듈 동기화)
+     */
     @Override
     @Transactional
     public ForbiddenWordResponseDto toggleForbiddenWordStatus(Long id) {
@@ -133,7 +145,7 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
 
         try {
             if (newStatus) {
-                // 사용함으로 전환 → BadwordToChatbotDto로 래핑하여 챗봇 모듈에 추가 요청
+                // 챗봇에 추가
                 BadwordToChatbotDto dto = new BadwordToChatbotDto(updated.getWord());
                 chatbotClient.post()
                         .uri("/chatbot/api/badwords")
@@ -142,7 +154,7 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
                         .bodyToMono(Void.class)
                         .block();
             } else {
-                // 사용 안 함으로 전환 → 챗봇 모듈에 삭제 요청
+                // 챗봇에서 삭제
                 chatbotClient.delete()
                         .uri("/chatbot/api/badwords/{word}", updated.getWord())
                         .retrieve()

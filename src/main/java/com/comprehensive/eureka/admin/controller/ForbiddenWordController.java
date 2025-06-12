@@ -30,8 +30,6 @@ public class ForbiddenWordController {
 
     /**
      * 금칙어 조회
-     * @param used  사용 여부 필터
-     * @param value 단어로 필터
      */
     @GetMapping
     public ResponseEntity<BaseResponseDto> getForbiddenWords(

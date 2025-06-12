@@ -50,8 +50,7 @@ public class UserForbiddenWordsChatController {
 
 
     /**
-     * GET /admin/forbidden-words/chats/count?userId={userId}
-     * → 특정 사용자의 누적 금칙어 위반 횟수 조회
+     * 특정 사용자의 누적 금칙어 위반 횟수 조회
      */
     @GetMapping("/count")
     public BaseResponseDto<Long> count(@RequestParam("userId") Long userId) {
@@ -61,9 +60,8 @@ public class UserForbiddenWordsChatController {
 
 
     /**
-     * DELETE /admin/forbidden-words/chats/{chatLogId}
      * - 단일 금칙어 로그 삭제
-     * - 삭제 후 남은 위반 횟수 변화에 따라 차단 해제 API 호출
+     * 삭제 후 남은 위반 횟수 변화에 따라 차단 해제 API 호출
      */
     @DeleteMapping("/{chatLogId}")
     public BaseResponseDto<Void> deleteAndProcess(

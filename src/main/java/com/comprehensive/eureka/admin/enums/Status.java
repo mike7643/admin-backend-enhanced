@@ -12,8 +12,4 @@ public enum Status {
     Status(String label) {
         this.label = label;
     }
-
-    public Status[] getAllStatus() {
-        return Status.values();
-    }
 }
