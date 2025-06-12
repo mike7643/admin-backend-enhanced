@@ -6,9 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
-/**
- * 사용자_금칙어_채팅 기록 조회 결과용 DTO
- */
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,9 +16,6 @@ public class UserForbiddenWordsChatDto {
     private Long forbiddenWordId;
     private Long chatMessageId;
 
-    /**
-     * Entity → DTO 변환
-     */
     public static UserForbiddenWordsChatDto from(UserForbiddenWordsChat e) {
         return UserForbiddenWordsChatDto.builder()
             .id(e.getId())

@@ -20,9 +20,6 @@ public class ForbiddenWord {
     @Column(nullable = false, unique = true)
     private String word;
 
-    /**
-     * 금칙어 사용 여부 (true: 사용중, false: 비활성)
-     */
     @Column(nullable = false)
     private boolean status;
 }

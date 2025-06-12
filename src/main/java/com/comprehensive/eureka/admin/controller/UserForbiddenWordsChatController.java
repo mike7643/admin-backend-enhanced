@@ -18,7 +18,7 @@ public class UserForbiddenWordsChatController {
     private final UserForbiddenWordsChatService service;
 
     /**
-     * GET /admin/forbidden-words/chats?userId={userId}
+     * 특정 사용자 ID로 금칙어 채팅 기록 조회
      */
     @GetMapping
     public BaseResponseDto<List<UserForbiddenWordsChatDto>> getByUserId(
@@ -30,15 +30,7 @@ public class UserForbiddenWordsChatController {
 
 
     /**
-     * POST /admin/forbidden-words/chats
      * 다중 금칙어 로그 저장
-     *
-     * body:
-     * {
-     *   "userId": 1,
-     *   "chatMessageId": 42,
-     *   "forbiddenWords": ["욕1", "욕2", "욕3"]
-     * }
      */
     @PostMapping
     public BaseResponseDto<Void> registersUserBadWordsChat(
@@ -60,8 +52,7 @@ public class UserForbiddenWordsChatController {
 
 
     /**
-     * - 단일 금칙어 로그 삭제
-     * 삭제 후 남은 위반 횟수 변화에 따라 차단 해제 API 호출
+     * 금칙어 로그 삭제 후 언밴 처리
      */
     @DeleteMapping("/{chatLogId}")
     public BaseResponseDto<Void> deleteAndProcess(
