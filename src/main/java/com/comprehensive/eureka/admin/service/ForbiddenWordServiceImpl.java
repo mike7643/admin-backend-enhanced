@@ -1,5 +1,6 @@
 package com.comprehensive.eureka.admin.service;
 
+import com.comprehensive.eureka.admin.dto.request.BadwordToChatbotDto;
 import com.comprehensive.eureka.admin.dto.request.ForbiddenWordRequestDto;
 import com.comprehensive.eureka.admin.dto.response.ForbiddenWordResponseDto;
 import com.comprehensive.eureka.admin.entity.ForbiddenWord;
@@ -78,9 +79,10 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
                             .build()
             );
 
+            BadwordToChatbotDto dto = new BadwordToChatbotDto(word);
             chatbotClient.post()
                     .uri("/chatbot/api/badwords")
-                    .bodyValue(requestDto)
+                    .bodyValue(dto)
                     .retrieve()
                     .bodyToMono(Void.class)
                     .block();

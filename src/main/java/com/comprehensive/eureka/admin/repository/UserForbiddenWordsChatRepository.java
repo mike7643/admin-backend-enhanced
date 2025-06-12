@@ -7,9 +7,10 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface UserForbiddenWordsChatRepository
-        extends JpaRepository<UserForbiddenWordsChat, Long> {
+public interface UserForbiddenWordsChatRepository extends JpaRepository<UserForbiddenWordsChat, Long> {
 
 
     List<UserForbiddenWordsChat> findByUserIdIn(List<Long> userIds);
+
+    long countByUserId(Long userId);
 }
