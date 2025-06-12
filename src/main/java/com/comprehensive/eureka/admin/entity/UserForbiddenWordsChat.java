@@ -2,6 +2,8 @@ package com.comprehensive.eureka.admin.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Table(name = "user_forbidden_words_chat",
@@ -26,5 +28,6 @@ public class UserForbiddenWordsChat {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "forbidden_word_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private ForbiddenWord forbiddenWord;
 }
