@@ -31,13 +31,13 @@ public class UserForbiddenWordsChatController {
 
     /**
      * POST /admin/forbidden-words/chats
-     * 단일 금칙어 로그 저장
+     * 다중 금칙어 로그 저장
      *
      * body:
      * {
      *   "userId": 1,
      *   "chatMessageId": 42,
-     *   "forbiddenWordId": 10
+     *   "forbiddenWords": ["욕1", "욕2", "욕3"]
      * }
      */
     @PostMapping

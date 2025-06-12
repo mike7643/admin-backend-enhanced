@@ -4,11 +4,11 @@ import com.comprehensive.eureka.admin.dto.UserForbiddenWordsChatDto;
 import com.comprehensive.eureka.admin.dto.request.UpdateUserStatusRequestDto;
 import com.comprehensive.eureka.admin.dto.request.UserForbiddenWordsChatCreateRequestDto;
 import com.comprehensive.eureka.admin.dto.response.UserInfoResponseDto;
-import com.comprehensive.eureka.admin.entity.ForbiddenWord;
 import com.comprehensive.eureka.admin.entity.UserForbiddenWordsChat;
 import com.comprehensive.eureka.admin.enums.Status;
 import com.comprehensive.eureka.admin.exception.AdminException;
 import com.comprehensive.eureka.admin.exception.ErrorCode;
+import com.comprehensive.eureka.admin.repository.ForbiddenWordRepository;
 import com.comprehensive.eureka.admin.repository.UserForbiddenWordsChatRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
 public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChatService {
 
     private final UserForbiddenWordsChatRepository chatRepository;
+    private final ForbiddenWordRepository fwRepository;
+
 
     @Qualifier("userClient")
     private final WebClient userClient;
@@ -79,24 +81,28 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
     }
 
     /**
-     * 단일 금칙어 ID로 한 건씩 저장
+     * 다중 금칙어 ID로 한 건씩 저장
      */
     @Override
     @Transactional
     public void registersUserBadWordsChat(UserForbiddenWordsChatCreateRequestDto request) {
-        UserForbiddenWordsChat entity = UserForbiddenWordsChat.builder()
-                .userId(request.getUserId())
-                .chatMessageId(request.getChatMessageId())
-                .forbiddenWord(
-                        ForbiddenWord.builder()
-                                .id(request.getForbiddenWordId())
-                                .build()
+        List<UserForbiddenWordsChat> entities = request.getForbiddenWords().stream()
+                .map(word -> fwRepository.findIdByWord(word)
+                        .orElseThrow(() -> new AdminException(
+                                ErrorCode.FORBIDDEN_WORD_NOT_FOUND))
                 )
-                .build();
+                .map(id -> UserForbiddenWordsChat.builder()
+                        .userId(request.getUserId())
+                        .chatMessageId(request.getChatMessageId())
+                        .forbiddenWord(fwRepository.getReferenceById(id))
+                        .build()
+                )
+                .collect(Collectors.toList());
+
         try {
-            chatRepository.save(entity);
+            chatRepository.saveAll(entities);
         } catch (Exception ex) {
-            log.error("금칙어 채팅 기록 단건 저장 실패", ex);
+            log.error("금칙어 채팅 기록 저장 실패", ex);
             throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_SAVE_FAILED);
         }
     }
