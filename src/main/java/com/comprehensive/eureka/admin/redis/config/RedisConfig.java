@@ -1,4 +1,4 @@
-package com.comprehensive.eureka.admin.config;
+package com.comprehensive.eureka.admin.redis.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
