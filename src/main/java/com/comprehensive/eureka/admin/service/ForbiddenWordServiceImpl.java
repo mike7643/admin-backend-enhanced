@@ -1,6 +1,5 @@
 package com.comprehensive.eureka.admin.service;
 
-import com.comprehensive.eureka.admin.dto.request.BadwordToChatbotDto;
 import com.comprehensive.eureka.admin.dto.request.ForbiddenWordRequestDto;
 import com.comprehensive.eureka.admin.dto.response.ForbiddenWordResponseDto;
 import com.comprehensive.eureka.admin.entity.ForbiddenWord;
@@ -8,10 +7,8 @@ import com.comprehensive.eureka.admin.exception.AdminException;
 import com.comprehensive.eureka.admin.exception.ErrorCode;
 import com.comprehensive.eureka.admin.repository.ForbiddenWordRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Collections;
 import java.util.List;
@@ -22,9 +19,10 @@ import java.util.stream.Collectors;
 public class ForbiddenWordServiceImpl implements ForbiddenWordService {
 
     private final ForbiddenWordRepository forbiddenWordRepository;
+    private final ForbiddenWordRedisService redisService;
 
-    @Qualifier("chatbotClient")
-    private final WebClient chatbotClient;
+/*    @Qualifier("chatbotClient")
+    private final WebClient chatbotClient;*/
 
     /**
      * 금칙어 목록 조회 (사용 여부·단어 필터 지원)
@@ -84,13 +82,16 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
                             .build()
             );
 
-            BadwordToChatbotDto dto = new BadwordToChatbotDto(word);
+            redisService.addForbiddenWord(word);
+            redisService.publishUpdate();
+
+/*            BadwordToChatbotDto dto = new BadwordToChatbotDto(word);
             chatbotClient.post()
                     .uri("/chatbot/api/badwords")
                     .bodyValue(dto)
                     .retrieve()
                     .bodyToMono(Void.class)
-                    .block();
+                    .block();*/
 
 
         } catch (Exception ex) {
@@ -118,12 +119,15 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
 
         try {
             forbiddenWordRepository.delete(fw);
+            redisService.removeForbiddenWord(word);
+            redisService.publishUpdate();
 
-            chatbotClient.delete()
+/*            chatbotClient.delete()
                     .uri("/chatbot/api/badwords/{word}", word)
                     .retrieve()
                     .bodyToMono(Void.class)
-                    .block();
+                    .block();*/
+
         } catch (Exception ex) {
             throw new AdminException(ErrorCode.FORBIDDEN_WORD_DELETE_FAILED);
         }
@@ -146,20 +150,22 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
         try {
             if (newStatus) {
                 // 챗봇에 추가
-                BadwordToChatbotDto dto = new BadwordToChatbotDto(updated.getWord());
-                chatbotClient.post()
+                redisService.addForbiddenWord(updated.getWord());
+ /*                BadwordToChatbotDto dto = new BadwordToChatbotDto(updated.getWord());
+                    chatbotClient.post()
                         .uri("/chatbot/api/badwords")
                         .bodyValue(dto)
                         .retrieve()
                         .bodyToMono(Void.class)
-                        .block();
+                        .block();*/
             } else {
                 // 챗봇에서 삭제
-                chatbotClient.delete()
+                redisService.removeForbiddenWord(updated.getWord());
+/*                chatbotClient.delete()
                         .uri("/chatbot/api/badwords/{word}", updated.getWord())
                         .retrieve()
                         .bodyToMono(Void.class)
-                        .block();
+                        .block();*/
             }
         } catch (Exception ex) {
             if (newStatus) {
