@@ -82,9 +82,9 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
                             .build()
             );
 
-            redisService.addForbiddenWord(word);
-            redisService.publishUpdate();
-
+            if(requestDto.isUsed()) {
+                redisService.addForbiddenWord(word);
+            }
 /*            BadwordToChatbotDto dto = new BadwordToChatbotDto(word);
             chatbotClient.post()
                     .uri("/chatbot/api/badwords")
@@ -119,9 +119,9 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
 
         try {
             forbiddenWordRepository.delete(fw);
-            redisService.removeForbiddenWord(word);
-            redisService.publishUpdate();
-
+            if( fw.isStatus()) {
+                redisService.removeForbiddenWord(word);
+            }
 /*            chatbotClient.delete()
                     .uri("/chatbot/api/badwords/{word}", word)
                     .retrieve()

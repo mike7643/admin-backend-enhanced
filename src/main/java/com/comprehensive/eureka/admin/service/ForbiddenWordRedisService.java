@@ -9,7 +9,6 @@ import java.util.Set;
 public class ForbiddenWordRedisService {
 
     private static final String KEY = "forbidden:words";
-    private static final String TOPIC = "forbidden-words-updates";
 
     private final StringRedisTemplate redisTemplate;
 
@@ -31,9 +30,5 @@ public class ForbiddenWordRedisService {
 
     public boolean isForbidden(String word) {
         return Boolean.TRUE.equals(redisTemplate.opsForSet().isMember(KEY, word));
-    }
-
-    public void publishUpdate() {
-        redisTemplate.convertAndSend(TOPIC, "update");
     }
 }
