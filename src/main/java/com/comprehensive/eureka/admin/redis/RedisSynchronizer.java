@@ -25,7 +25,7 @@ public class RedisSynchronizer {
     private final StringRedisTemplate redisTemplate;
 
     /** 
-     * ① 애플리케이션 기동 직후 한 번 동기화 
+     * 애플리케이션 기동 직후 한 번 동기화
      */
     @PostConstruct
     public void initSync() {
@@ -33,7 +33,7 @@ public class RedisSynchronizer {
     }
 
     /** 
-     * ② 5분마다 자동 동기화
+     * 5분마다 자동 동기화
      */
     @Scheduled(fixedDelay = 5 * 60 * 1000)
     public void periodicSync() {
