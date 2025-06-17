@@ -23,6 +23,7 @@ public class WebClientConfig {
     public WebClient userClient(WebClient.Builder builder) {
         return builder
                 .baseUrl(DomainConstant.USER_DOMAIN)
+//                .baseUrl(DomainConstant.FOR_TEST)
                 .build();
     }
 }
