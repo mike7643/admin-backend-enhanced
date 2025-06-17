@@ -9,9 +9,12 @@ import com.comprehensive.eureka.admin.exception.AdminException;
 import com.comprehensive.eureka.admin.exception.ErrorCode;
 import com.comprehensive.eureka.admin.repository.ForbiddenWordRepository;
 import com.comprehensive.eureka.admin.repository.UserForbiddenWordsChatRepository;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -61,6 +64,8 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
     @Override
     @Transactional
     public void registersUserBadWordsChat(UserForbiddenWordsChatCreateRequestDto request) {
+        long beforeCount = countByUserId(request.getUserId());
+
         List<UserForbiddenWordsChat> entities = request.getForbiddenWords().stream()
                 .map(word -> fwRepository.findIdByWord(word)
                         .orElseThrow(() -> new AdminException(
@@ -80,6 +85,11 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
             log.error("금칙어 채팅 기록 저장 실패", ex);
             throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_SAVE_FAILED);
         }
+
+        long afterCount = beforeCount + entities.size();
+        log.info("userId: {} 의 금칙어 위반 횟수", request.getUserId());
+
+        checkApplyBan(request.getUserId(), beforeCount, afterCount);
     }
 
     /**
@@ -154,6 +164,65 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
                     .block();
         } catch (Exception ex) {
             log.error("사용자 해제 API 호출 실패, userId={}", userId, ex);
+            throw new AdminException(ErrorCode.USER_STATUS_UPDATE_FAILED);
+        }
+    }
+
+    private void checkApplyBan(Long userId, long beforeCount, long afterCount) {
+        int[] thresholds = {1000, 500, 300, 100, 50, 30};
+        int targetThreshold = 0;
+
+        for (int t : thresholds) {
+            if (beforeCount < t && afterCount >= t) {
+                targetThreshold = t;
+                break;
+            }
+        }
+
+        if (targetThreshold == 0) return;
+
+        LocalDateTime unbanTime = null;
+        LocalDate banEndDate = null;
+
+        switch (targetThreshold) {
+            case 30: // 당일 자정
+                banEndDate = LocalDate.now();
+                break;
+            case 50: // 다음날 자정
+                banEndDate = LocalDate.now().plusDays(1);
+                break;
+            case 100: // 일주일 후 자정
+                banEndDate = LocalDate.now().plusWeeks(1);
+                break;
+            case 300: // 2주 후 자정
+                banEndDate = LocalDate.now().plusWeeks(2);
+                break;
+            case 500: // 한달 후 자정
+                banEndDate = LocalDate.now().plusMonths(1);
+                break;
+            default: // 영구 정지
+                unbanTime = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+                break;
+        }
+
+        if (banEndDate != null) unbanTime = banEndDate.plusDays(1).atStartOfDay();
+
+        UpdateUserStatusRequestDto req = UpdateUserStatusRequestDto.builder()
+                .userId(userId)
+                .status(Status.INACTIVE)
+                .unbanTime(unbanTime)
+                .build();
+
+        try {
+            userClient.put()
+                    .uri("/user/status")
+                    .bodyValue(req)
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .block();
+
+        } catch (Exception ex) {
+            log.error("사용자 차단 API 호출 실패, userId={}", userId, ex);
             throw new AdminException(ErrorCode.USER_STATUS_UPDATE_FAILED);
         }
     }
