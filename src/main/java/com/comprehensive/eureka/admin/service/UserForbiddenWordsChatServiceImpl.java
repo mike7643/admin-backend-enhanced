@@ -87,7 +87,7 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
         }
 
         long afterCount = beforeCount + entities.size();
-        log.info("userId: {} 의 금칙어 위반 횟수", request.getUserId());
+        log.info("userId {} 의 금칙어 위반 횟수 = {}", request.getUserId(), afterCount);
 
         checkApplyBan(request.getUserId(), beforeCount, afterCount);
     }

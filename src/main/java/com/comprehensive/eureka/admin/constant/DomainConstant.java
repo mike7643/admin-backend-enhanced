@@ -25,6 +25,8 @@ public class DomainConstant {
     public static final String ADMIN_DOMAIN = "http://localhost:8086";
     // 채팅 모듈 도메인
     public static final String CHAT_DOMAIN = "http://localhost:8087";
+
+    public static final String FOR_TEST = "https://www.visiblego.com";
     // 슬래쉬
     public static final String SLASH = "/";
     // 화이트리스트 (인증 없이 접근 허용할 경로)
