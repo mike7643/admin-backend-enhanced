@@ -58,7 +58,7 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
     public List<UserForbiddenWordsChatDetailDto> findDetailByUserId(Long userId) {
         List<UserForbiddenWordsChat> logs;
         try {
-            logs = chatRepository.findByUserId(userId);
+            logs = chatRepository.findByUserIdOrderByChatSentAtDesc(userId);
         } catch (Exception ex) {
             log.error("금칙어 채팅 기록 조회 실패 (userId={})", userId, ex);
             throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_RETRIEVE_FAILED);
