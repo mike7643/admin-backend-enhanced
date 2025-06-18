@@ -13,6 +13,7 @@ import com.comprehensive.eureka.admin.exception.ErrorCode;
 import com.comprehensive.eureka.admin.repository.ForbiddenWordRepository;
 import com.comprehensive.eureka.admin.repository.UserForbiddenWordsChatRepository;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -90,24 +91,19 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
         ChatMessageRequestDto dto = new ChatMessageRequestDto(request.getChatMessageId());
         log.info("dto={}", dto);
 
-        log.info(" --------------전---------------------");
-        // ↓ JsonNode 매핑 대신 BaseResponse 매핑으로 변경 ↓
-        Mono<BaseResponseDto<ChatMessageResponseDto>> responseMono = chatClient.post()
+        // 2) 바로 block() 해서 파싱된 결과 얻기
+        BaseResponseDto<ChatMessageResponseDto> response = chatClient.post()
                 .uri("/chatbot/api/chat/message")
                 .bodyValue(dto)
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<BaseResponseDto<ChatMessageResponseDto>>() {});
+                .bodyToMono(new ParameterizedTypeReference<BaseResponseDto<ChatMessageResponseDto>>() {})
+                .block(Duration.ofSeconds(5));    // 타임아웃도 걸어두면 좋습니다
 
-        ChatMessageResponseDto chatDto;
-        try {
-            chatDto = responseMono
-                    .map(BaseResponseDto::getData)
-                    .block();
-        } catch (Exception ex) {
-            log.error("채팅 메시지 조회 중 예외, id={}, error={}", request.getChatMessageId(), ex.getMessage());
+        if (response == null || response.getData() == null) {
+            log.error("채팅 메시지 조회 실패, id={}", request.getChatMessageId());
             throw new AdminException(ErrorCode.CHAT_MESSAGE_RETRIEVE_FAILED);
         }
-        log.info(" --------------후---------------------");
+        ChatMessageResponseDto chatDto = response.getData();
         log.info("chatDto={}", chatDto);
         if (chatDto == null) {
             log.error("채팅 메시지 조회 실패, id={}", request.getChatMessageId());
@@ -118,8 +114,6 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
         Long sentAt = chatDto.getSentAt();
 
         log.info("messageText={}, sentAt={}", messageText, sentAt);
-
-
 
         List<UserForbiddenWordsChat> entities = request.getForbiddenWords().stream()
                 .map(word -> fwRepository.findIdByWord(word)
