@@ -86,7 +86,9 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
 
         //챗 메시지 가져오기
         ChatMessageRequestDto dto = new ChatMessageRequestDto(request.getChatMessageId());
+        log.info("dto={}", dto);
 
+        log.info(" --------------전---------------------");
         Mono<ChatMessageResponseDto> mono = chatClient.post()
                 .uri("/chatbot/api/chat/message")
                 .bodyValue(dto)
@@ -100,9 +102,10 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
                             d.get("sentAt").asLong()
                     );
                 });
+        log.info(" --------------후---------------------");
 
         ChatMessageResponseDto chatDto = mono.block();
-
+        log.info("chatDto={}", chatDto);
         if (chatDto == null) {
             log.error("채팅 메시지 조회 실패, id={}", request.getChatMessageId());
             throw new AdminException(ErrorCode.CHAT_MESSAGE_RETRIEVE_FAILED);
@@ -112,6 +115,8 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
         Long sentAt = chatDto.getSentAt();
 
         log.info("messageText={}, sentAt={}", messageText, sentAt);
+
+
 
         List<UserForbiddenWordsChat> entities = request.getForbiddenWords().stream()
                 .map(word -> fwRepository.findIdByWord(word)
