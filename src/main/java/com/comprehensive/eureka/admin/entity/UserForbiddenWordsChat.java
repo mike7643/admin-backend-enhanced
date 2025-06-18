@@ -12,10 +12,10 @@ import java.time.LocalDateTime;
         indexes = {
                 @Index(name = "idx_ufwc_user",      columnList = "user_id"),
         })
-@Data
+
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode
 @Builder
 public class UserForbiddenWordsChat {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
