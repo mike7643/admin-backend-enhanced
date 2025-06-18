@@ -2,6 +2,7 @@ package com.comprehensive.eureka.admin.controller;
 
 
 import com.comprehensive.eureka.admin.dto.BaseResponseDto;
+import com.comprehensive.eureka.admin.dto.UserForbiddenWordsChatDetailDto;
 import com.comprehensive.eureka.admin.dto.UserForbiddenWordsChatDto;
 import com.comprehensive.eureka.admin.dto.request.UserForbiddenWordsChatCreateRequestDto;
 import com.comprehensive.eureka.admin.service.UserForbiddenWordsChatService;
@@ -21,10 +22,10 @@ public class UserForbiddenWordsChatController {
      * 특정 사용자 ID로 금칙어 채팅 기록 조회
      */
     @GetMapping
-    public BaseResponseDto<List<UserForbiddenWordsChatDto>> getByUserId(
+    public BaseResponseDto<List<UserForbiddenWordsChatDetailDto>> getByUserId(
             @RequestParam("userId") Long userId
     ) {
-        List<UserForbiddenWordsChatDto> dtos = service.findByUserId(userId);
+        List<UserForbiddenWordsChatDetailDto> dtos = service.findDetailByUserId(userId);
         return BaseResponseDto.success(dtos);
     }
 
