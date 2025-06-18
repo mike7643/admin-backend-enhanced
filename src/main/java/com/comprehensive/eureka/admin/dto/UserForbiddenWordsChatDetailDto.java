@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserForbiddenWordsChatDetailDto {
+    private Long id;
+
     private Long userId;
 
     private String forbiddenWord;
