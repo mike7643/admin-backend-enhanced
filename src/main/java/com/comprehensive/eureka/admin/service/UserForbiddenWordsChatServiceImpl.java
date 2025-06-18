@@ -38,19 +38,7 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
 
     private final WebClient originClient;
 
-    private final Client customClient;
 
-//    public UserForbiddenWordsChatServiceImpl(
-//            UserForbiddenWordsChatRepository chatRepository,
-//            ForbiddenWordRepository fwRepository,
-//            @Qualifier("userClient") WebClient userClient,
-//            @Qualifier("chatbotClient") WebClient chatClient
-//    ) {
-//        this.chatRepository = chatRepository;
-//        this.fwRepository = fwRepository;
-//        this.userClient = userClient;
-//        this.chatClient = chatClient;
-//    }
     /**
      * 특정 사용자 ID로 금칙어 채팅 기록 조회
      */
@@ -180,7 +168,7 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
 
         try {
             originClient.put()
-                    .uri("/user/status")
+                    .uri("http://localhost:8085/user/status")
                     .bodyValue(req)
                     .retrieve()
                     .bodyToMono(Void.class)
