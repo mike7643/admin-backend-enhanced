@@ -14,19 +14,14 @@ import com.comprehensive.eureka.admin.exception.ErrorCode;
 import com.comprehensive.eureka.admin.repository.ForbiddenWordRepository;
 import com.comprehensive.eureka.admin.repository.UserForbiddenWordsChatRepository;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.util.Collections;
 import java.util.List;
@@ -128,7 +123,8 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
                 .collect(Collectors.toList());
         log.info("userId={}, entities={}", request.getUserId(), entities);
         try {
-            chatRepository.saveAll(entities);
+            List<UserForbiddenWordsChat> userForbiddenWordsChats = chatRepository.saveAll(entities);
+            log.info("userForbiddenWordsChats = {}", userForbiddenWordsChats.stream());
         } catch (Exception ex) {
             log.error("금칙어 채팅 기록 저장 실패", ex);
             throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_SAVE_FAILED);
@@ -138,6 +134,7 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
         log.info("userId {} 의 금칙어 위반 횟수 = {}", request.getUserId(), afterCount);
 
         checkApplyBan(request.getUserId(), beforeCount, afterCount);
+        log.info("checkApplyBan userId={}, beforeCount={}, afterCount={}", request.getUserId(), beforeCount, afterCount);
     }
 
 
