@@ -238,7 +238,7 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
 
         try {
             originClient.put()
-                    .uri("/user/status")
+                    .uri("http://localhost:8085/user/status")
                     .bodyValue(req)
                     .retrieve()
                     .bodyToMono(Void.class)
