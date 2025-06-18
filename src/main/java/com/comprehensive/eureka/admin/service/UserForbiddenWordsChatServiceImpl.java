@@ -6,6 +6,7 @@ import com.comprehensive.eureka.admin.dto.UserForbiddenWordsChatDetailDto;
 import com.comprehensive.eureka.admin.dto.request.ChatMessageRequestDto;
 import com.comprehensive.eureka.admin.dto.request.UpdateUserStatusRequestDto;
 import com.comprehensive.eureka.admin.dto.request.UserForbiddenWordsChatCreateRequestDto;
+import com.comprehensive.eureka.admin.dto.request.UserForbiddenWordsRequestDto;
 import com.comprehensive.eureka.admin.dto.response.ChatMessageResponseDto;
 import com.comprehensive.eureka.admin.entity.UserForbiddenWordsChat;
 import com.comprehensive.eureka.admin.enums.Status;
@@ -43,8 +44,9 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
      * 특정 사용자 ID로 금칙어 채팅 기록 조회
      */
     @Override
-    public List<UserForbiddenWordsChatDetailDto> findDetailByUserId(Long userId) {
+    public List<UserForbiddenWordsChatDetailDto> findDetailByUserId(UserForbiddenWordsRequestDto request) {
         List<UserForbiddenWordsChat> logs;
+        Long userId = request.getUserId();
         try {
             logs = chatRepository.findByUserIdOrderByChatSentAtDesc(userId);
         } catch (Exception ex) {
