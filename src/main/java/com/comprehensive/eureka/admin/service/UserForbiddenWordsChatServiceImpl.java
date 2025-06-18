@@ -85,58 +85,35 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
     public void registersUserBadWordsChat(UserForbiddenWordsChatCreateRequestDto request) {
         long beforeCount = chatRepository.countByUserId(request.getUserId());
 
-        //챗 메시지 가져오기
-        ChatMessageRequestDto dto = new ChatMessageRequestDto(request.getChatMessageId());
-        log.info("dto={}", dto);
-
-        BaseResponseDto<ChatMessageResponseDto> response = customClient.registerForbiddenChatLog(dto);
-        log.info("response={}", response);
-
-
-        if (response == null || response.getData() == null) {
-            log.error("채팅 메시지 조회 실패, id={}", request.getChatMessageId());
-            throw new AdminException(ErrorCode.CHAT_MESSAGE_RETRIEVE_FAILED);
-        }
-        ChatMessageResponseDto chatDto = response.getData();
-        log.info("chatDto={}", chatDto);
-        if (chatDto == null) {
-            log.error("채팅 메시지 조회 실패, id={}", request.getChatMessageId());
-            throw new AdminException(ErrorCode.CHAT_MESSAGE_RETRIEVE_FAILED);
-        }
-
-        String messageText = chatDto.getMessage();
-        Long sentAt = chatDto.getSentAt();
-
-        log.info("messageText={}, sentAt={}", messageText, sentAt);
+        Long userId = request.getUserId();
+        String messageText = request.getChatMessageText();
+        Long sentAt = request.getSentAt();
 
         List<UserForbiddenWordsChat> entities = request.getForbiddenWords().stream()
                 .map(word -> fwRepository.findIdByWord(word)
                         .orElseThrow(() -> new AdminException(ErrorCode.FORBIDDEN_WORD_NOT_FOUND)))
                 .map(fwId -> UserForbiddenWordsChat.builder()
-                        .userId(request.getUserId())
-                        .chatMessageId(request.getChatMessageId())
-                        .forbiddenWord(fwRepository.getReferenceById(fwId))
+                        .userId(userId)
                         .chatMessageText(messageText)
                         .chatSentAt(sentAt)
+                        .forbiddenWord(fwRepository.getReferenceById(fwId))
                         .build()
                 )
                 .collect(Collectors.toList());
-        log.info("userId={}, entities={}", request.getUserId(), entities);
+
+        log.info("userId={}, beforeCount={}, entitiesToSave={}", userId, beforeCount, entities.size());
+
         try {
-            List<UserForbiddenWordsChat> userForbiddenWordsChats = chatRepository.saveAll(entities);
-            log.info("userForbiddenWordsChats = {}", userForbiddenWordsChats.stream());
+            List<UserForbiddenWordsChat> saved = chatRepository.saveAll(entities);
+            log.info("savedCount={}", saved.size());
         } catch (Exception ex) {
             log.error("금칙어 채팅 기록 저장 실패", ex);
             throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_SAVE_FAILED);
         }
 
         long afterCount = beforeCount + entities.size();
-        log.info("userId {} 의 금칙어 위반 횟수 = {}", request.getUserId(), afterCount);
-
-        checkApplyBan(request.getUserId(), beforeCount, afterCount);
-        log.info("checkApplyBan userId={}, beforeCount={}, afterCount={}", request.getUserId(), beforeCount, afterCount);
+        checkApplyBan(userId, beforeCount, afterCount);
     }
-
 
     /**
      * 사용자의 금칙어 누적 집계
@@ -261,7 +238,7 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
 
         try {
             originClient.put()
-                    .uri("/user/status")
+                    .uri("http://localhost:8085/user/status")
                     .bodyValue(req)
                     .retrieve()
                     .bodyToMono(Void.class)

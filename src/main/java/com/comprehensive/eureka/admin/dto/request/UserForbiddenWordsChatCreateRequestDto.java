@@ -10,6 +10,7 @@ import java.util.List;
 @Builder
 public class UserForbiddenWordsChatCreateRequestDto {
     private Long userId;
-    private Long chatMessageId;
+    private String chatMessageText;
+    private Long sentAt;
     private List<String> forbiddenWords;
 }
