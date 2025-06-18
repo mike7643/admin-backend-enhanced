@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode
 @Builder
 public class UserForbiddenWordsChat {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
