@@ -85,7 +85,7 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
         long beforeCount = chatRepository.countByUserId(request.getUserId());
 
         //챗 메시지 가져오기
-        ChatMessageRequestDto dto = new ChatMessageRequestDto(request.getUserId());
+        ChatMessageRequestDto dto = new ChatMessageRequestDto(request.getChatMessageId());
 
         Mono<ChatMessageResponseDto> mono = chatClient.post()
                 .uri("/chatbot/api/chat/message")
