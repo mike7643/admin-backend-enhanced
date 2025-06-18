@@ -5,6 +5,7 @@ import com.comprehensive.eureka.admin.dto.BaseResponseDto;
 import com.comprehensive.eureka.admin.dto.UserForbiddenWordsChatDetailDto;
 import com.comprehensive.eureka.admin.dto.UserForbiddenWordsChatDto;
 import com.comprehensive.eureka.admin.dto.request.UserForbiddenWordsChatCreateRequestDto;
+import com.comprehensive.eureka.admin.dto.request.UserForbiddenWordsRequestDto;
 import com.comprehensive.eureka.admin.service.UserForbiddenWordsChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -21,11 +22,11 @@ public class UserForbiddenWordsChatController {
     /**
      * 특정 사용자 ID로 금칙어 채팅 기록 조회
      */
-    @GetMapping
+    @PostMapping("/detail")
     public BaseResponseDto<List<UserForbiddenWordsChatDetailDto>> getByUserId(
-            @RequestParam("userId") Long userId
-    ) {
-        List<UserForbiddenWordsChatDetailDto> dtos = service.findDetailByUserId(userId);
+            @RequestBody UserForbiddenWordsRequestDto request
+            ) {
+        List<UserForbiddenWordsChatDetailDto> dtos = service.findDetailByUserId(request);
         return BaseResponseDto.success(dtos);
     }
 
