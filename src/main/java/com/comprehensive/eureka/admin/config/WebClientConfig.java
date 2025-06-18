@@ -15,6 +15,7 @@ public class WebClientConfig {
     public WebClient chatbotClient(WebClient.Builder builder) {
         return builder
                 .baseUrl(DomainConstant.CHATBOT_DOMAIN)
+//                .baseUrl(DomainConstant.FOR_TEST)
                 .build();
     }
 
