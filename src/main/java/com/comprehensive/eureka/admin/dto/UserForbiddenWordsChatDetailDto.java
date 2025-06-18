@@ -15,5 +15,5 @@ public class UserForbiddenWordsChatDetailDto {
 
     private String chatMessage;
 
-    private LocalDateTime chatSentAt;
+    private Long chatSentAt;
 }

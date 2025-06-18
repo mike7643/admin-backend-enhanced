@@ -37,5 +37,5 @@ public class UserForbiddenWordsChat {
     private String chatMessageText;
 
     @Column(name = "chat_sent_at", nullable = false)
-    private LocalDateTime chatSentAt;
+    private Long chatSentAt;
 }

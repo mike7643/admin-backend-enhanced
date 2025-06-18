@@ -15,12 +15,13 @@ import com.comprehensive.eureka.admin.repository.UserForbiddenWordsChatRepositor
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import lombok.RequiredArgsConstructor;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,19 +29,27 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChatService {
 
     private final UserForbiddenWordsChatRepository chatRepository;
     private final ForbiddenWordRepository fwRepository;
 
-
-    @Qualifier("userClient")
     private final WebClient userClient;
 
-    @Qualifier("chatbotClient")
     private final WebClient chatClient;
+
+    public UserForbiddenWordsChatServiceImpl(
+            UserForbiddenWordsChatRepository chatRepository,
+            ForbiddenWordRepository fwRepository,
+            @Qualifier("userClient") WebClient userClient,
+            @Qualifier("chatbotClient") WebClient chatClient
+    ) {
+        this.chatRepository = chatRepository;
+        this.fwRepository = fwRepository;
+        this.userClient = userClient;
+        this.chatClient = chatClient;
+    }
     /**
      * 특정 사용자 ID로 금칙어 채팅 기록 조회
      */
@@ -75,12 +84,24 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
     public void registersUserBadWordsChat(UserForbiddenWordsChatCreateRequestDto request) {
         long beforeCount = chatRepository.countByUserId(request.getUserId());
 
-        ChatMessageResponseDto chatDto = chatClient.post()
-                .uri("/api/chat/messages/detail")
-                .bodyValue(new ChatMessageRequestDto(request.getChatMessageId()))
+        //챗 메시지 가져오기
+        ChatMessageRequestDto dto = new ChatMessageRequestDto(request.getUserId());
+
+        Mono<ChatMessageResponseDto> mono = chatClient.post()
+                .uri("/chatbot/api/chat/message")
+                .bodyValue(dto)
                 .retrieve()
-                .bodyToMono(ChatMessageResponseDto.class)
-                .block();
+                .bodyToMono(JsonNode.class)
+                .map(json -> {
+                    JsonNode d = json.get("data");
+                    return new ChatMessageResponseDto(
+                            d.get("id").asLong(),
+                            d.get("message").asText(),
+                            d.get("sentAt").asLong()
+                    );
+                });
+
+        ChatMessageResponseDto chatDto = mono.block();
 
         if (chatDto == null) {
             log.error("채팅 메시지 조회 실패, id={}", request.getChatMessageId());
@@ -88,7 +109,9 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
         }
 
         String messageText = chatDto.getMessage();
-        LocalDateTime sentAt = chatDto.getSentAt();
+        Long sentAt = chatDto.getSentAt();
+
+        log.info("messageText={}, sentAt={}", messageText, sentAt);
 
         List<UserForbiddenWordsChat> entities = request.getForbiddenWords().stream()
                 .map(word -> fwRepository.findIdByWord(word)
@@ -102,6 +125,7 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
                         .build()
                 )
                 .collect(Collectors.toList());
+        log.info("userId={}, entities={}", request.getUserId(), entities);
         try {
             chatRepository.saveAll(entities);
         } catch (Exception ex) {
