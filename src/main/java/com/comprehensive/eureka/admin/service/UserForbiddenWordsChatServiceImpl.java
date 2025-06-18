@@ -1,5 +1,6 @@
 package com.comprehensive.eureka.admin.service;
 
+import com.comprehensive.eureka.admin.dto.BaseResponseDto;
 import com.comprehensive.eureka.admin.dto.UserForbiddenWordsChatDetailDto;
 import com.comprehensive.eureka.admin.dto.request.ChatMessageRequestDto;
 import com.comprehensive.eureka.admin.dto.request.UpdateUserStatusRequestDto;
@@ -18,6 +19,7 @@ import java.time.LocalDateTime;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -89,22 +91,23 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
         log.info("dto={}", dto);
 
         log.info(" --------------전---------------------");
-        Mono<ChatMessageResponseDto> mono = chatClient.post()
+        // ↓ JsonNode 매핑 대신 BaseResponse 매핑으로 변경 ↓
+        Mono<BaseResponseDto<ChatMessageResponseDto>> responseMono = chatClient.post()
                 .uri("/chatbot/api/chat/message")
                 .bodyValue(dto)
                 .retrieve()
-                .bodyToMono(JsonNode.class)
-                .map(json -> {
-                    JsonNode d = json.get("data");
-                    return new ChatMessageResponseDto(
-                            d.get("id").asLong(),
-                            d.get("message").asText(),
-                            d.get("sentAt").asLong()
-                    );
-                });
-        log.info(" --------------후---------------------");
+                .bodyToMono(new ParameterizedTypeReference<BaseResponseDto<ChatMessageResponseDto>>() {});
 
-        ChatMessageResponseDto chatDto = mono.block();
+        ChatMessageResponseDto chatDto;
+        try {
+            chatDto = responseMono
+                    .map(BaseResponseDto::getData)
+                    .block();
+        } catch (Exception ex) {
+            log.error("채팅 메시지 조회 중 예외, id={}, error={}", request.getChatMessageId(), ex.getMessage());
+            throw new AdminException(ErrorCode.CHAT_MESSAGE_RETRIEVE_FAILED);
+        }
+        log.info(" --------------후---------------------");
         log.info("chatDto={}", chatDto);
         if (chatDto == null) {
             log.error("채팅 메시지 조회 실패, id={}", request.getChatMessageId());
