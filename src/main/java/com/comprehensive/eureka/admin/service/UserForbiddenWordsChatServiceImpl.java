@@ -1,5 +1,6 @@
 package com.comprehensive.eureka.admin.service;
 
+import com.comprehensive.eureka.admin.client.Client;
 import com.comprehensive.eureka.admin.dto.BaseResponseDto;
 import com.comprehensive.eureka.admin.dto.UserForbiddenWordsChatDetailDto;
 import com.comprehensive.eureka.admin.dto.request.ChatMessageRequestDto;
@@ -18,6 +19,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
@@ -33,26 +35,27 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChatService {
 
     private final UserForbiddenWordsChatRepository chatRepository;
     private final ForbiddenWordRepository fwRepository;
 
-    private final WebClient userClient;
+    private final WebClient originClient;
 
-    private final WebClient chatClient;
+    private final Client customClient;
 
-    public UserForbiddenWordsChatServiceImpl(
-            UserForbiddenWordsChatRepository chatRepository,
-            ForbiddenWordRepository fwRepository,
-            @Qualifier("userClient") WebClient userClient,
-            @Qualifier("chatbotClient") WebClient chatClient
-    ) {
-        this.chatRepository = chatRepository;
-        this.fwRepository = fwRepository;
-        this.userClient = userClient;
-        this.chatClient = chatClient;
-    }
+//    public UserForbiddenWordsChatServiceImpl(
+//            UserForbiddenWordsChatRepository chatRepository,
+//            ForbiddenWordRepository fwRepository,
+//            @Qualifier("userClient") WebClient userClient,
+//            @Qualifier("chatbotClient") WebClient chatClient
+//    ) {
+//        this.chatRepository = chatRepository;
+//        this.fwRepository = fwRepository;
+//        this.userClient = userClient;
+//        this.chatClient = chatClient;
+//    }
     /**
      * 특정 사용자 ID로 금칙어 채팅 기록 조회
      */
@@ -91,13 +94,9 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
         ChatMessageRequestDto dto = new ChatMessageRequestDto(request.getChatMessageId());
         log.info("dto={}", dto);
 
-        // 2) 바로 block() 해서 파싱된 결과 얻기
-        BaseResponseDto<ChatMessageResponseDto> response = chatClient.post()
-                .uri("/chatbot/api/chat/message")
-                .bodyValue(dto)
-                .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<BaseResponseDto<ChatMessageResponseDto>>() {})
-                .block(Duration.ofSeconds(5));    // 타임아웃도 걸어두면 좋습니다
+        BaseResponseDto<ChatMessageResponseDto> response = customClient.registerForbiddenChatLog(dto);
+        log.info("response={}", response);
+
 
         if (response == null || response.getData() == null) {
             log.error("채팅 메시지 조회 실패, id={}", request.getChatMessageId());
@@ -206,7 +205,7 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
                 .build();
 
         try {
-            userClient.put()
+            originClient.put()
                     .uri("/user/status")
                     .bodyValue(req)
                     .retrieve()
@@ -264,7 +263,7 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
                 .build();
 
         try {
-            userClient.put()
+            originClient.put()
                     .uri("/user/status")
                     .bodyValue(req)
                     .retrieve()
