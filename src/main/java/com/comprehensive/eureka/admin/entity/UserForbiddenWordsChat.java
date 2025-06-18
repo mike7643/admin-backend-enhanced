@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 @Table(name = "user_forbidden_words_chat",
         indexes = {
                 @Index(name = "idx_ufwc_user",      columnList = "user_id"),
-                @Index(name = "idx_ufwc_chat",      columnList = "chat_message_id")
         })
 @Data
 @NoArgsConstructor
@@ -24,9 +23,6 @@ public class UserForbiddenWordsChat {
 
     @Column(name = "user_id", nullable = false)
     private Long userId;
-
-    @Column(name = "chat_message_id", nullable = false)
-    private Long chatMessageId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "forbidden_word_id", nullable = false)

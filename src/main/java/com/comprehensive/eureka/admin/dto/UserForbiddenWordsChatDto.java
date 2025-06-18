@@ -14,14 +14,13 @@ public class UserForbiddenWordsChatDto {
     private Long id;
     private Long userId;
     private Long forbiddenWordId;
-    private Long chatMessageId;
-
+    private String chatMessageText;
     public static UserForbiddenWordsChatDto from(UserForbiddenWordsChat e) {
         return UserForbiddenWordsChatDto.builder()
             .id(e.getId())
             .userId(e.getUserId())
             .forbiddenWordId(e.getForbiddenWord().getId())
-            .chatMessageId(e.getChatMessageId())
+            .chatMessageText(e.getChatMessageText())
             .build();
     }
 }
