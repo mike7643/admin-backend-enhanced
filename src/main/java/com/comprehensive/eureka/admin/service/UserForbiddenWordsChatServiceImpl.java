@@ -59,6 +59,7 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
         }
         return logs.stream()
                 .map(log -> new UserForbiddenWordsChatDetailDto(
+                        log.getId(),
                         log.getUserId(),
                         log.getForbiddenWord().getWord(),
                         log.getChatMessageText(),
