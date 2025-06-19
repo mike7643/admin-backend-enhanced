@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -80,17 +81,25 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
         String messageText = request.getChatMessageText();
         Long sentAt = request.getSentAt();
 
-        List<UserForbiddenWordsChat> entities = request.getForbiddenWords().stream()
-                .map(word -> fwRepository.findIdByWord(word)
-                        .orElseThrow(() -> new AdminException(ErrorCode.FORBIDDEN_WORD_NOT_FOUND)))
-                .map(fwId -> UserForbiddenWordsChat.builder()
+        List<UserForbiddenWordsChat> entities = new ArrayList<>();
+
+        for (String word : request.getForbiddenWords()) {
+            Long fwId = fwRepository.findIdByWord(word)
+                    .orElseThrow(() -> new AdminException(ErrorCode.FORBIDDEN_WORD_NOT_FOUND));
+
+            int occurrences = countOccurrences(messageText, word);
+            if (occurrences <= 0) continue;
+
+            for (int i = 0; i < occurrences; i++) {
+                entities.add(UserForbiddenWordsChat.builder()
                         .userId(userId)
                         .chatMessageText(messageText)
                         .chatSentAt(sentAt)
                         .forbiddenWord(fwRepository.getReferenceById(fwId))
                         .build()
-                )
-                .collect(Collectors.toList());
+                );
+            }
+        }
 
         log.info("userId={}, beforeCount={}, entitiesToSave={}", userId, beforeCount, entities.size());
 
@@ -105,6 +114,21 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
         long afterCount = beforeCount + entities.size();
         checkApplyBan(userId, beforeCount, afterCount);
     }
+
+    /**
+     * 텍스트에서 특정 단어가 몇 번 등장하는지 세야됨
+     */
+    private int countOccurrences(String text, String word) {
+        if (text == null || word == null || word.isEmpty()) return 0;
+        int count = 0;
+        int idx = 0;
+        while ((idx = text.indexOf(word, idx)) != -1) {
+            count++;
+            idx += word.length();
+        }
+        return count;
+    }
+
 
     /**
      * 사용자의 금칙어 누적 집계
