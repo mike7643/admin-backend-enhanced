@@ -39,7 +39,9 @@ public enum ErrorCode {
     // 허용어 관리 에러 (60060~60069)
     ALLOW_WORD_NOT_FOUND(60060, "ALLOW_WORD_NOT_FOUND", "해당 허용어를 찾을 수 없습니다."),
     ALLOW_WORD_ALREADY_EXISTS(60061, "ALLOW_WORD_ALREADY_EXISTS", "이미 등록된 허용어입니다."),
-    ALLOW_WORD_CREATE_FAILED(60062, "ALLOW_WORD_CREATE_FAILED", "허용어 등록에 실패했습니다.");
+    ALLOW_WORD_CREATE_FAILED(60062, "ALLOW_WORD_CREATE_FAILED", "허용어 등록에 실패했습니다."),
+    ALLOW_WORD_UPDATE_FAILED(60063, "ALLOW_WORD_UPDATE_FAILED", "허용어 수정에 실패했습니다."),
+    ALLOW_WORD_DELETE_FAILED(60064, "ALLOW_WORD_DELETE_FAILED", "허용어 삭제에 실패했습니다.");
 
 
     private final int code;

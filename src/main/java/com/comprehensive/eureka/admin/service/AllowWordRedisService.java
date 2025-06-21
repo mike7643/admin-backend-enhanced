@@ -19,15 +19,15 @@ public class AllowWordRedisService {
         redisTemplate.opsForSet().add(KEY, word);
     }
 
-    public void removeForbiddenWord(String word) {
+    public void removeAllowWord(String word) {
         redisTemplate.opsForSet().remove(KEY, word);
     }
 
-    public Set<String> getAllForbiddenWords() {
+    public Set<String> getAllAllowWords() {
         return redisTemplate.opsForSet().members(KEY);
     }
 
-    public boolean isForbidden(String word) {
+    public boolean isAllow(String word) {
         return Boolean.TRUE.equals(redisTemplate.opsForSet().isMember(KEY, word));
     }
 }
