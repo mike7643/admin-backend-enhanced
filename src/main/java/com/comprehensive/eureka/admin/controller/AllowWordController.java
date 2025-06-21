@@ -27,9 +27,6 @@ public class AllowWordController {
 
     private final AllowWordService allowWordService;
 
-    /**
-     * 금칙어 등록
-     */
     @PostMapping
     public ResponseEntity<BaseResponseDto> addForbiddenWord(
             @RequestBody AllowWordRequestDto requestDto
@@ -38,4 +35,30 @@ public class AllowWordController {
         return ResponseEntity.ok(BaseResponseDto.success(saved));
     }
 
+    @GetMapping
+    public ResponseEntity<BaseResponseDto> getAllowWords(
+            @RequestParam(value = "used", required = false) Boolean used,
+            @RequestParam(value = "value", required = false) String value
+    ) {
+        List<AllowWordResponseDto> list = allowWordService.getAllowWords(used, value);
+        return ResponseEntity.ok(BaseResponseDto.success(list));
+    }
+
+
+    @DeleteMapping("/{wordId}")
+    public ResponseEntity<BaseResponseDto> deleteAllowWord(
+            @PathVariable("wordId") Long wordId
+    ) {
+        allowWordService.deleteAllowWord(wordId);
+        return ResponseEntity.ok(BaseResponseDto.voidSuccess());
+    }
+
+
+    @PatchMapping("/{wordId}/status-change")
+    public ResponseEntity<BaseResponseDto> toggleStatus(
+            @PathVariable("wordId") Long id
+    ) {
+        AllowWordResponseDto dto = allowWordService.toggleAllowWordStatus(id);
+        return ResponseEntity.ok(BaseResponseDto.success(dto));
+    }
 }

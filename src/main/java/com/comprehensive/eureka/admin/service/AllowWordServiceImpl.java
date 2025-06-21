@@ -114,7 +114,7 @@ public class AllowWordServiceImpl implements AllowWordService {
 
     @Override
     @Transactional
-    public AllowWordResponseDto toggleForbiddenWordStatus(Long id) {
+    public AllowWordResponseDto toggleAllowWordStatus(Long id) {
         AllowWord aw = allowWordRepository.findById(id)
                 .orElseThrow(() -> new AdminException(ErrorCode.ALLOW_WORD_NOT_FOUND));
 

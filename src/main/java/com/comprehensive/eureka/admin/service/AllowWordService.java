@@ -12,5 +12,5 @@ public interface AllowWordService {
 
     void deleteAllowWord(Long id);
 
-    AllowWordResponseDto toggleForbiddenWordStatus(Long id);
+    AllowWordResponseDto toggleAllowWordStatus(Long id);
 }
