@@ -1,5 +1,8 @@
 package com.comprehensive.eureka.admin.redis;
 
+import com.comprehensive.eureka.admin.entity.AllowWord;
+import com.comprehensive.eureka.admin.repository.AllowWordRepository;
+import com.comprehensive.eureka.admin.service.AllowWordRedisService;
 import java.util.List;
 
 
@@ -20,8 +23,10 @@ import lombok.RequiredArgsConstructor;
 public class RedisSynchronizer {
 
     private static final String KEY = "forbidden:words";
+    private static final String ALLOW_KEY = "allow:words";
 
     private final ForbiddenWordRepository repository;
+    private final AllowWordRepository allowWordRepository;
     private final StringRedisTemplate redisTemplate;
 
     /** 
@@ -56,6 +61,15 @@ public class RedisSynchronizer {
         // 3) Redis Set에 다시 적재
         if (!words.isEmpty()) {
             redisTemplate.opsForSet().add(KEY, words.toArray(new String[0]));
+        }
+
+        words = allowWordRepository.findByStatus(true)
+                                       .stream()
+                                       .map(AllowWord::getWord)
+                                       .toList();
+
+        if (!words.isEmpty()) {
+            redisTemplate.opsForSet().add(ALLOW_KEY, words.toArray(new String[0]));
         }
     }
 }
