@@ -9,7 +9,6 @@ public interface AllowWordRepository extends JpaRepository<AllowWord, Long> {
 
     boolean existsByWord(String word);
     List<AllowWord> findByStatus(boolean status);
-    Optional<List<AllowWord>> findByUsedAndWord(boolean used, String word);
-    Optional<List<AllowWord>> findByUsed(boolean used);
+    Optional<List<AllowWord>> findByStatusAndWord(boolean status, String word);
     Optional<AllowWord> findByWord(String word);
 }

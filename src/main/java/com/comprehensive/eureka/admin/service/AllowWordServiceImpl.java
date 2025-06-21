@@ -66,13 +66,12 @@ public class AllowWordServiceImpl implements AllowWordService {
 
         if (used != null && value != null) {
             // 사용 여부와 단어로 필터
-            entities = allowWordRepository.findByUsedAndWord(used, value)
+            entities = allowWordRepository.findByStatusAndWord(used, value)
                     .orElse(Collections.emptyList());
 
         } else if (used != null) {
             // 사용 여부로 필터
-            entities = allowWordRepository.findByUsed(used)
-                    .orElse(Collections.emptyList());
+            entities = allowWordRepository.findByStatus(used);
 
         } else if (value != null) {
             // 단어만 필터
