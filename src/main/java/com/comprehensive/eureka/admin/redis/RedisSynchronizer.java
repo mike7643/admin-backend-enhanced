@@ -51,6 +51,7 @@ public class RedisSynchronizer {
     private void syncDbToRedis() {
         // 1) Redis 키 초기화 (삭제)
         redisTemplate.delete(KEY);
+        redisTemplate.delete(ALLOW_KEY);
 
         // 2) DB에서 status=true인 금칙어 word 목록 조회
         List<String> words = repository.findByStatus(true)
