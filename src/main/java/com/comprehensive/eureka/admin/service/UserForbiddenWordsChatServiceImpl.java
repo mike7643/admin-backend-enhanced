@@ -1,29 +1,23 @@
 package com.comprehensive.eureka.admin.service;
 
-import com.comprehensive.eureka.admin.client.Client;
-import com.comprehensive.eureka.admin.dto.BaseResponseDto;
 import com.comprehensive.eureka.admin.dto.UserForbiddenWordsChatDetailDto;
-import com.comprehensive.eureka.admin.dto.request.ChatMessageRequestDto;
 import com.comprehensive.eureka.admin.dto.request.UpdateUserStatusRequestDto;
 import com.comprehensive.eureka.admin.dto.request.UserForbiddenWordsChatCreateRequestDto;
 import com.comprehensive.eureka.admin.dto.request.UserForbiddenWordsRequestDto;
-import com.comprehensive.eureka.admin.dto.response.ChatMessageResponseDto;
 import com.comprehensive.eureka.admin.entity.UserForbiddenWordsChat;
 import com.comprehensive.eureka.admin.enums.Status;
 import com.comprehensive.eureka.admin.exception.AdminException;
 import com.comprehensive.eureka.admin.exception.ErrorCode;
 import com.comprehensive.eureka.admin.repository.ForbiddenWordRepository;
 import com.comprehensive.eureka.admin.repository.UserForbiddenWordsChatRepository;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -87,18 +81,16 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
             Long fwId = fwRepository.findIdByWord(word)
                     .orElseThrow(() -> new AdminException(ErrorCode.FORBIDDEN_WORD_NOT_FOUND));
 
-            int occurrences = countOccurrences(messageText, word);
-            if (occurrences <= 0) continue;
+//            int occurrences = countOccurrences(messageText, word);
+//            if (occurrences <= 0) continue;
 
-            for (int i = 0; i < occurrences; i++) {
-                entities.add(UserForbiddenWordsChat.builder()
-                        .userId(userId)
-                        .chatMessageText(messageText)
-                        .chatSentAt(sentAt)
-                        .forbiddenWord(fwRepository.getReferenceById(fwId))
-                        .build()
-                );
-            }
+            entities.add(UserForbiddenWordsChat.builder()
+                    .userId(userId)
+                    .chatMessageText(messageText)
+                    .chatSentAt(sentAt)
+                    .forbiddenWord(fwRepository.getReferenceById(fwId))
+                    .build()
+            );
         }
 
         log.info("userId={}, beforeCount={}, entitiesToSave={}", userId, beforeCount, entities.size());
