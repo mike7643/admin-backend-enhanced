@@ -123,7 +123,7 @@ class UserForbiddenWordsChatServiceImplTest {
                 .forbiddenWords(words)
                 .build();
 
-        given(chatRepository.countByUserId(USER_ID)).willReturn(0L);
+        given(chatRepository.countByUserId(USER_ID)).willReturn(0L, 2L);
         given(fwRepository.findIdByWord(WORD)).willReturn(Optional.of(1L));
         given(fwRepository.findIdByWord(WORD + "2")).willReturn(Optional.of(2L));
         given(fwRepository.getReferenceById(1L)).willReturn(new ForbiddenWord(1L, WORD, true));
@@ -136,7 +136,7 @@ class UserForbiddenWordsChatServiceImplTest {
                 .doesNotThrowAnyException();
 
         // then
-        then(chatRepository).should().countByUserId(USER_ID);
+        then(chatRepository).should(times(2)).countByUserId(USER_ID);
         then(fwRepository).should(times(words.size())).findIdByWord(anyString());
         then(chatRepository).should().saveAll(argThat(iterable -> {
             int count = 0;
@@ -145,6 +145,59 @@ class UserForbiddenWordsChatServiceImplTest {
             }
             return count == words.size();
         }));        verifyNoInteractions(originClient);
+    }
+
+    @Test
+    @DisplayName("registersUserBadWordsChat: 요청 내 중복 단어도 그대로 저장")
+    void registersUserBadWordsChat_DuplicateWordsAreCounted() {
+        // given
+        List<String> words = List.of(WORD, WORD, WORD);
+        UserForbiddenWordsChatCreateRequestDto req = UserForbiddenWordsChatCreateRequestDto.builder()
+                .userId(USER_ID)
+                .chatMessageText(MESSAGE)
+                .sentAt(SENT_AT)
+                .forbiddenWords(words)
+                .build();
+
+        given(chatRepository.countByUserId(USER_ID)).willReturn(10L, 13L);
+        given(fwRepository.findIdByWord(WORD)).willReturn(Optional.of(1L));
+        given(fwRepository.getReferenceById(1L)).willReturn(new ForbiddenWord(1L, WORD, true));
+        given(chatRepository.saveAll(anyList())).willReturn(List.of());
+
+        // when
+        assertThatCode(() -> service.registersUserBadWordsChat(req)).doesNotThrowAnyException();
+
+        // then
+        then(fwRepository).should(times(3)).findIdByWord(WORD);
+        then(chatRepository).should().saveAll(argThat(iterable -> {
+            int count = 0;
+            for (UserForbiddenWordsChat ignored : iterable) {
+                count++;
+            }
+            return count == 3;
+        }));
+    }
+
+    @Test
+    @DisplayName("registersUserBadWordsChat: 금칙어 목록 비어있으면 저장하지 않음")
+    void registersUserBadWordsChat_EmptyForbiddenWords() {
+        // given
+        UserForbiddenWordsChatCreateRequestDto req = UserForbiddenWordsChatCreateRequestDto.builder()
+                .userId(USER_ID)
+                .chatMessageText(MESSAGE)
+                .sentAt(SENT_AT)
+                .forbiddenWords(List.of())
+                .build();
+        given(chatRepository.countByUserId(USER_ID)).willReturn(0L);
+
+        // when
+        assertThatCode(() -> service.registersUserBadWordsChat(req)).doesNotThrowAnyException();
+
+        // then
+        then(chatRepository).should(times(1)).countByUserId(USER_ID);
+        then(chatRepository).should(never()).saveAll(anyList());
+        then(fwRepository).shouldHaveNoInteractions();
+        verifyNoInteractions(originClient);
     }
 
     @Test
@@ -166,7 +219,7 @@ class UserForbiddenWordsChatServiceImplTest {
                 .isInstanceOf(AdminException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.FORBIDDEN_WORD_NOT_FOUND);
-        then(chatRepository).should().countByUserId(USER_ID);
+        then(chatRepository).should(times(1)).countByUserId(USER_ID);
         then(fwRepository).should().findIdByWord("unknown");
         then(chatRepository).should(never()).saveAll(anyList());
     }
