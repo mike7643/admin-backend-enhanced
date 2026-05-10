@@ -74,10 +74,13 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
         Long userId = request.getUserId();
         String messageText = request.getChatMessageText();
         Long sentAt = request.getSentAt();
+        List<String> forbiddenWords = request.getForbiddenWords() == null
+                ? Collections.emptyList()
+                : request.getForbiddenWords();
 
         List<UserForbiddenWordsChat> entities = new ArrayList<>();
 
-        for (String word : request.getForbiddenWords()) {
+        for (String word : forbiddenWords) {
             Long fwId = fwRepository.findIdByWord(word)
                     .orElseThrow(() -> new AdminException(ErrorCode.FORBIDDEN_WORD_NOT_FOUND));
 
@@ -93,6 +96,10 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
             );
         }
 
+        if (entities.isEmpty()) {
+            return;
+        }
+
         log.info("userId={}, beforeCount={}, entitiesToSave={}", userId, beforeCount, entities.size());
 
         try {
@@ -103,7 +110,13 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
             throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_SAVE_FAILED);
         }
 
-        long afterCount = beforeCount + entities.size();
+        long afterCount;
+        try {
+            afterCount = chatRepository.countByUserId(userId);
+        } catch (Exception ex) {
+            log.error("금칙어 로그 집계 실패, userId={}", userId, ex);
+            throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_AGGREGATE_FAILED);
+        }
         checkApplyBan(userId, beforeCount, afterCount);
     }
 
