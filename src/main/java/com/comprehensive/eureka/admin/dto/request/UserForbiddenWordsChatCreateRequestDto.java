@@ -13,4 +13,5 @@ public class UserForbiddenWordsChatCreateRequestDto {
     private String chatMessageText;
     private Long sentAt;
     private List<String> forbiddenWords;
+    private String eventId;
 }
