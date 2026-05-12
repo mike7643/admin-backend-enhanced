@@ -6,7 +6,11 @@ import com.comprehensive.eureka.admin.entity.ForbiddenWord;
 import com.comprehensive.eureka.admin.exception.AdminException;
 import com.comprehensive.eureka.admin.exception.ErrorCode;
 import com.comprehensive.eureka.admin.repository.ForbiddenWordRepository;
+import com.comprehensive.eureka.admin.service.wordevent.SyncAction;
+import com.comprehensive.eureka.admin.service.wordevent.WordCacheSyncEvent;
+import com.comprehensive.eureka.admin.service.wordevent.WordType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,10 +23,7 @@ import java.util.stream.Collectors;
 public class ForbiddenWordServiceImpl implements ForbiddenWordService {
 
     private final ForbiddenWordRepository forbiddenWordRepository;
-    private final ForbiddenWordRedisService redisService;
-
-/*    @Qualifier("chatbotClient")
-    private final WebClient chatbotClient;*/
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 금칙어 목록 조회 (사용 여부·단어 필터 지원)
@@ -83,15 +84,12 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
             );
 
             if(requestDto.isUsed()) {
-                redisService.addForbiddenWord(word);
+                eventPublisher.publishEvent(new WordCacheSyncEvent(
+                        WordType.FORBIDDEN,
+                        SyncAction.ADD,
+                        word
+                ));
             }
-/*            BadwordToChatbotDto dto = new BadwordToChatbotDto(word);
-            chatbotClient.post()
-                    .uri("/chatbot/api/badwords")
-                    .bodyValue(dto)
-                    .retrieve()
-                    .bodyToMono(Void.class)
-                    .block();*/
 
 
         } catch (Exception ex) {
@@ -120,13 +118,12 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
         try {
             forbiddenWordRepository.delete(fw);
             if( fw.isStatus()) {
-                redisService.removeForbiddenWord(word);
+                eventPublisher.publishEvent(new WordCacheSyncEvent(
+                        WordType.FORBIDDEN,
+                        SyncAction.REMOVE,
+                        word
+                ));
             }
-/*            chatbotClient.delete()
-                    .uri("/chatbot/api/badwords/{word}", word)
-                    .retrieve()
-                    .bodyToMono(Void.class)
-                    .block();*/
 
         } catch (Exception ex) {
             throw new AdminException(ErrorCode.FORBIDDEN_WORD_DELETE_FAILED);
@@ -150,22 +147,18 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
         try {
             if (newStatus) {
                 // 챗봇에 추가
-                redisService.addForbiddenWord(updated.getWord());
- /*                BadwordToChatbotDto dto = new BadwordToChatbotDto(updated.getWord());
-                    chatbotClient.post()
-                        .uri("/chatbot/api/badwords")
-                        .bodyValue(dto)
-                        .retrieve()
-                        .bodyToMono(Void.class)
-                        .block();*/
+                eventPublisher.publishEvent(new WordCacheSyncEvent(
+                        WordType.FORBIDDEN,
+                        SyncAction.ADD,
+                        updated.getWord()
+                ));
             } else {
                 // 챗봇에서 삭제
-                redisService.removeForbiddenWord(updated.getWord());
-/*                chatbotClient.delete()
-                        .uri("/chatbot/api/badwords/{word}", updated.getWord())
-                        .retrieve()
-                        .bodyToMono(Void.class)
-                        .block();*/
+                eventPublisher.publishEvent(new WordCacheSyncEvent(
+                        WordType.FORBIDDEN,
+                        SyncAction.REMOVE,
+                        updated.getWord()
+                ));
             }
         } catch (Exception ex) {
             if (newStatus) {

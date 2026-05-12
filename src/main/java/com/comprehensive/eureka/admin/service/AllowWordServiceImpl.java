@@ -1,20 +1,19 @@
 package com.comprehensive.eureka.admin.service;
 
 import com.comprehensive.eureka.admin.dto.AllowWordRequestDto;
-import com.comprehensive.eureka.admin.dto.request.ForbiddenWordRequestDto;
 import com.comprehensive.eureka.admin.dto.response.AllowWordResponseDto;
-import com.comprehensive.eureka.admin.dto.response.ForbiddenWordResponseDto;
 import com.comprehensive.eureka.admin.entity.AllowWord;
-import com.comprehensive.eureka.admin.entity.ForbiddenWord;
 import com.comprehensive.eureka.admin.exception.AdminException;
 import com.comprehensive.eureka.admin.exception.ErrorCode;
 import com.comprehensive.eureka.admin.repository.AllowWordRepository;
-import com.comprehensive.eureka.admin.repository.ForbiddenWordRepository;
-import java.net.CacheRequest;
+import com.comprehensive.eureka.admin.service.wordevent.SyncAction;
+import com.comprehensive.eureka.admin.service.wordevent.WordCacheSyncEvent;
+import com.comprehensive.eureka.admin.service.wordevent.WordType;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AllowWordServiceImpl implements AllowWordService {
 
     private final AllowWordRepository allowWordRepository;
-    private final AllowWordRedisService redisService;
+    private final ApplicationEventPublisher eventPublisher;
 
 
     @Override
@@ -45,7 +44,11 @@ public class AllowWordServiceImpl implements AllowWordService {
             );
 
             if(requestDto.isUsed()) {
-                redisService.addAllowWord(word);
+                eventPublisher.publishEvent(new WordCacheSyncEvent(
+                        WordType.ALLOW,
+                        SyncAction.ADD,
+                        word
+                ));
             }
 
         } catch (Exception ex) {
@@ -103,7 +106,11 @@ public class AllowWordServiceImpl implements AllowWordService {
         try {
             allowWordRepository.delete(aw);
             if (aw.isStatus()) {
-                redisService.removeAllowWord(word);
+                eventPublisher.publishEvent(new WordCacheSyncEvent(
+                        WordType.ALLOW,
+                        SyncAction.REMOVE,
+                        word
+                ));
             }
         } catch (Exception ex) {
             throw new AdminException(ErrorCode.ALLOW_WORD_DELETE_FAILED);
@@ -124,11 +131,19 @@ public class AllowWordServiceImpl implements AllowWordService {
         try {
             if (newStatus) {
                 // 챗봇에 추가
-                redisService.addAllowWord(updated.getWord());
+                eventPublisher.publishEvent(new WordCacheSyncEvent(
+                        WordType.ALLOW,
+                        SyncAction.ADD,
+                        updated.getWord()
+                ));
 
             } else {
                 // 챗봇에서 삭제
-                redisService.removeAllowWord(updated.getWord());
+                eventPublisher.publishEvent(new WordCacheSyncEvent(
+                        WordType.ALLOW,
+                        SyncAction.REMOVE,
+                        updated.getWord()
+                ));
 
             }
 
