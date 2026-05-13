@@ -6,7 +6,11 @@ import com.comprehensive.eureka.admin.entity.ForbiddenWord;
 import com.comprehensive.eureka.admin.exception.AdminException;
 import com.comprehensive.eureka.admin.exception.ErrorCode;
 import com.comprehensive.eureka.admin.repository.ForbiddenWordRepository;
+import com.comprehensive.eureka.admin.service.wordevent.SyncAction;
+import com.comprehensive.eureka.admin.service.wordevent.WordCacheSyncEvent;
+import com.comprehensive.eureka.admin.service.wordevent.WordType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,10 +23,7 @@ import java.util.stream.Collectors;
 public class ForbiddenWordServiceImpl implements ForbiddenWordService {
 
     private final ForbiddenWordRepository forbiddenWordRepository;
-    private final ForbiddenWordRedisService redisService;
-
-/*    @Qualifier("chatbotClient")
-    private final WebClient chatbotClient;*/
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 금칙어 목록 조회 (사용 여부·단어 필터 지원)
@@ -81,21 +82,11 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
                             .status(requestDto.isUsed())
                             .build()
             );
-
-            if(requestDto.isUsed()) {
-                redisService.addForbiddenWord(word);
-            }
-/*            BadwordToChatbotDto dto = new BadwordToChatbotDto(word);
-            chatbotClient.post()
-                    .uri("/chatbot/api/badwords")
-                    .bodyValue(dto)
-                    .retrieve()
-                    .bodyToMono(Void.class)
-                    .block();*/
-
-
         } catch (Exception ex) {
             throw new AdminException(ErrorCode.FORBIDDEN_WORD_CREATE_FAILED);
+        }
+        if (requestDto.isUsed()) {
+            publishForbiddenEvent(SyncAction.ADD, word, ErrorCode.FORBIDDEN_WORD_CREATE_FAILED);
         }
 
         return new ForbiddenWordResponseDto(
@@ -119,17 +110,11 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
 
         try {
             forbiddenWordRepository.delete(fw);
-            if( fw.isStatus()) {
-                redisService.removeForbiddenWord(word);
-            }
-/*            chatbotClient.delete()
-                    .uri("/chatbot/api/badwords/{word}", word)
-                    .retrieve()
-                    .bodyToMono(Void.class)
-                    .block();*/
-
         } catch (Exception ex) {
             throw new AdminException(ErrorCode.FORBIDDEN_WORD_DELETE_FAILED);
+        }
+        if (fw.isStatus()) {
+            publishForbiddenEvent(SyncAction.REMOVE, word, ErrorCode.FORBIDDEN_WORD_DELETE_FAILED);
         }
     }
 
@@ -147,38 +132,28 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
         fw.setStatus(newStatus);
         ForbiddenWord updated = forbiddenWordRepository.save(fw);
 
-        try {
-            if (newStatus) {
-                // 챗봇에 추가
-                redisService.addForbiddenWord(updated.getWord());
- /*                BadwordToChatbotDto dto = new BadwordToChatbotDto(updated.getWord());
-                    chatbotClient.post()
-                        .uri("/chatbot/api/badwords")
-                        .bodyValue(dto)
-                        .retrieve()
-                        .bodyToMono(Void.class)
-                        .block();*/
-            } else {
-                // 챗봇에서 삭제
-                redisService.removeForbiddenWord(updated.getWord());
-/*                chatbotClient.delete()
-                        .uri("/chatbot/api/badwords/{word}", updated.getWord())
-                        .retrieve()
-                        .bodyToMono(Void.class)
-                        .block();*/
-            }
-        } catch (Exception ex) {
-            if (newStatus) {
-                throw new AdminException(ErrorCode.FORBIDDEN_WORD_CHATBOT_ADD_FAILED);
-            } else {
-                throw new AdminException(ErrorCode.FORBIDDEN_WORD_CHATBOT_DELETE_FAILED);
-            }
-        }
+        publishForbiddenEvent(
+                newStatus ? SyncAction.ADD : SyncAction.REMOVE,
+                updated.getWord(),
+                newStatus ? ErrorCode.FORBIDDEN_WORD_CHATBOT_ADD_FAILED : ErrorCode.FORBIDDEN_WORD_CHATBOT_DELETE_FAILED
+        );
 
         return new ForbiddenWordResponseDto(
                 updated.getId(),
                 updated.getWord(),
                 updated.isStatus()
         );
+    }
+
+    private void publishForbiddenEvent(SyncAction action, String word, ErrorCode errorCode) {
+        try {
+            eventPublisher.publishEvent(new WordCacheSyncEvent(
+                    WordType.FORBIDDEN,
+                    action,
+                    word
+            ));
+        } catch (Exception ex) {
+            throw new AdminException(errorCode);
+        }
     }
 }

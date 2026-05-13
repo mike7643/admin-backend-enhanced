@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,7 +27,7 @@ class AllowWordServiceImplTest {
     private AllowWordRepository allowWordRepository;
 
     @Mock
-    private AllowWordRedisService redisService;
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private AllowWordServiceImpl service;
@@ -36,7 +37,7 @@ class AllowWordServiceImplTest {
 
     @BeforeEach
     void setup() {
-        Mockito.reset(allowWordRepository, redisService);
+        Mockito.reset(allowWordRepository, eventPublisher);
     }
 
     @Test
@@ -71,7 +72,7 @@ class AllowWordServiceImplTest {
                         AllowWordResponseDto::getWord,
                         AllowWordResponseDto::isStatus)
                 .containsExactly(ID, WORD, true);
-        then(redisService).should().addAllowWord(WORD);
+        then(eventPublisher).should().publishEvent(any(Object.class));
     }
 
     @Test
@@ -193,10 +194,10 @@ class AllowWordServiceImplTest {
         assertThatCode(() -> service.deleteAllowWord(ID))
                 .doesNotThrowAnyException();
         then(allowWordRepository).should().delete(awTrue);
-        then(redisService).should().removeAllowWord(WORD);
+        then(eventPublisher).should().publishEvent(any(Object.class));
 
         // given: false 일때
-        reset(allowWordRepository, redisService);
+        reset(allowWordRepository, eventPublisher);
         AllowWord awFalse = new AllowWord(ID, WORD, false);
         given(allowWordRepository.findById(ID)).willReturn(Optional.of(awFalse));
 
@@ -204,7 +205,7 @@ class AllowWordServiceImplTest {
         assertThatCode(() -> service.deleteAllowWord(ID))
                 .doesNotThrowAnyException();
         then(allowWordRepository).should().delete(awFalse);
-        then(redisService).should(never()).removeAllowWord(anyString());
+        then(eventPublisher).should(never()).publishEvent(any(Object.class));
     }
 
     @Test
@@ -233,7 +234,7 @@ class AllowWordServiceImplTest {
 
         // then
         assertThat(dto.isStatus()).isTrue();
-        then(redisService).should().addAllowWord(WORD);
+        then(eventPublisher).should().publishEvent(any(Object.class));
     }
 
     @Test
@@ -249,7 +250,7 @@ class AllowWordServiceImplTest {
 
         // then
         assertThat(dto.isStatus()).isFalse();
-        then(redisService).should().removeAllowWord(WORD);
+        then(eventPublisher).should().publishEvent(any(Object.class));
     }
 
     @Test
@@ -264,7 +265,7 @@ class AllowWordServiceImplTest {
             return u;
         });
         willThrow(new RuntimeException("redis error"))
-                .given(redisService).addAllowWord(WORD);
+                .given(eventPublisher).publishEvent(any(Object.class));
 
         // when / then
         assertThatThrownBy(() -> service.toggleAllowWordStatus(ID))
@@ -285,7 +286,7 @@ class AllowWordServiceImplTest {
             return u;
         });
         willThrow(new RuntimeException("redis error"))
-                .given(redisService).removeAllowWord(WORD);
+                .given(eventPublisher).publishEvent(any(Object.class));
 
         // when / then
         assertThatThrownBy(() -> service.toggleAllowWordStatus(ID))

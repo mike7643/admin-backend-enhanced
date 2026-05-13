@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,7 +27,7 @@ class ForbiddenWordServiceImplTest {
     private ForbiddenWordRepository forbiddenWordRepository;
 
     @Mock
-    private ForbiddenWordRedisService redisService;
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private ForbiddenWordServiceImpl service;
@@ -36,7 +37,7 @@ class ForbiddenWordServiceImplTest {
 
     @BeforeEach
     void setup() {
-        Mockito.reset(forbiddenWordRepository, redisService);
+        Mockito.reset(forbiddenWordRepository, eventPublisher);
     }
 
     @Test
@@ -150,7 +151,7 @@ class ForbiddenWordServiceImplTest {
                         ForbiddenWordResponseDto::getWord,
                         ForbiddenWordResponseDto::isStatus)
                 .containsExactly(ID, WORD, true);
-        then(redisService).should().addForbiddenWord(WORD);
+        then(eventPublisher).should().publishEvent(any(Object.class));
     }
 
     @Test
@@ -193,10 +194,10 @@ class ForbiddenWordServiceImplTest {
         assertThatCode(() -> service.deleteForbiddenWord(ID))
                 .doesNotThrowAnyException();
         then(forbiddenWordRepository).should().delete(fwTrue);
-        then(redisService).should().removeForbiddenWord(WORD);
+        then(eventPublisher).should().publishEvent(any(Object.class));
 
         // given: 상태 false
-        reset(forbiddenWordRepository, redisService);
+        reset(forbiddenWordRepository, eventPublisher);
         ForbiddenWord fwFalse = new ForbiddenWord(ID, WORD, false);
         given(forbiddenWordRepository.findById(ID)).willReturn(Optional.of(fwFalse));
 
@@ -204,7 +205,7 @@ class ForbiddenWordServiceImplTest {
         assertThatCode(() -> service.deleteForbiddenWord(ID))
                 .doesNotThrowAnyException();
         then(forbiddenWordRepository).should().delete(fwFalse);
-        then(redisService).should(never()).removeForbiddenWord(anyString());
+        then(eventPublisher).should(never()).publishEvent(any(Object.class));
     }
 
     @Test
@@ -233,7 +234,7 @@ class ForbiddenWordServiceImplTest {
 
         // then
         assertThat(dto.isStatus()).isTrue();
-        then(redisService).should().addForbiddenWord(WORD);
+        then(eventPublisher).should().publishEvent(any(Object.class));
     }
 
     @Test
@@ -249,7 +250,7 @@ class ForbiddenWordServiceImplTest {
 
         // then
         assertThat(dto.isStatus()).isFalse();
-        then(redisService).should().removeForbiddenWord(WORD);
+        then(eventPublisher).should().publishEvent(any(Object.class));
     }
 
     @Test
@@ -264,7 +265,7 @@ class ForbiddenWordServiceImplTest {
             return u;
         });
         willThrow(new RuntimeException("redis error"))
-                .given(redisService).addForbiddenWord(WORD);
+                .given(eventPublisher).publishEvent(any(Object.class));
 
         // when / then
         assertThatThrownBy(() -> service.toggleForbiddenWordStatus(ID))
@@ -285,7 +286,7 @@ class ForbiddenWordServiceImplTest {
             return u;
         });
         willThrow(new RuntimeException("redis error"))
-                .given(redisService).removeForbiddenWord(WORD);
+                .given(eventPublisher).publishEvent(any(Object.class));
 
         // when / then
         assertThatThrownBy(() -> service.toggleForbiddenWordStatus(ID))
