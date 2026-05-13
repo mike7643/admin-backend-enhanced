@@ -82,18 +82,11 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
                             .status(requestDto.isUsed())
                             .build()
             );
-
-            if(requestDto.isUsed()) {
-                eventPublisher.publishEvent(new WordCacheSyncEvent(
-                        WordType.FORBIDDEN,
-                        SyncAction.ADD,
-                        word
-                ));
-            }
-
-
         } catch (Exception ex) {
             throw new AdminException(ErrorCode.FORBIDDEN_WORD_CREATE_FAILED);
+        }
+        if (requestDto.isUsed()) {
+            publishForbiddenEvent(SyncAction.ADD, word, ErrorCode.FORBIDDEN_WORD_CREATE_FAILED);
         }
 
         return new ForbiddenWordResponseDto(
@@ -117,16 +110,11 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
 
         try {
             forbiddenWordRepository.delete(fw);
-            if( fw.isStatus()) {
-                eventPublisher.publishEvent(new WordCacheSyncEvent(
-                        WordType.FORBIDDEN,
-                        SyncAction.REMOVE,
-                        word
-                ));
-            }
-
         } catch (Exception ex) {
             throw new AdminException(ErrorCode.FORBIDDEN_WORD_DELETE_FAILED);
+        }
+        if (fw.isStatus()) {
+            publishForbiddenEvent(SyncAction.REMOVE, word, ErrorCode.FORBIDDEN_WORD_DELETE_FAILED);
         }
     }
 
@@ -144,34 +132,28 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
         fw.setStatus(newStatus);
         ForbiddenWord updated = forbiddenWordRepository.save(fw);
 
-        try {
-            if (newStatus) {
-                // 챗봇에 추가
-                eventPublisher.publishEvent(new WordCacheSyncEvent(
-                        WordType.FORBIDDEN,
-                        SyncAction.ADD,
-                        updated.getWord()
-                ));
-            } else {
-                // 챗봇에서 삭제
-                eventPublisher.publishEvent(new WordCacheSyncEvent(
-                        WordType.FORBIDDEN,
-                        SyncAction.REMOVE,
-                        updated.getWord()
-                ));
-            }
-        } catch (Exception ex) {
-            if (newStatus) {
-                throw new AdminException(ErrorCode.FORBIDDEN_WORD_CHATBOT_ADD_FAILED);
-            } else {
-                throw new AdminException(ErrorCode.FORBIDDEN_WORD_CHATBOT_DELETE_FAILED);
-            }
-        }
+        publishForbiddenEvent(
+                newStatus ? SyncAction.ADD : SyncAction.REMOVE,
+                updated.getWord(),
+                newStatus ? ErrorCode.FORBIDDEN_WORD_CHATBOT_ADD_FAILED : ErrorCode.FORBIDDEN_WORD_CHATBOT_DELETE_FAILED
+        );
 
         return new ForbiddenWordResponseDto(
                 updated.getId(),
                 updated.getWord(),
                 updated.isStatus()
         );
+    }
+
+    private void publishForbiddenEvent(SyncAction action, String word, ErrorCode errorCode) {
+        try {
+            eventPublisher.publishEvent(new WordCacheSyncEvent(
+                    WordType.FORBIDDEN,
+                    action,
+                    word
+            ));
+        } catch (Exception ex) {
+            throw new AdminException(errorCode);
+        }
     }
 }

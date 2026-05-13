@@ -42,17 +42,11 @@ public class AllowWordServiceImpl implements AllowWordService {
                             .status(requestDto.isUsed())
                             .build()
             );
-
-            if(requestDto.isUsed()) {
-                eventPublisher.publishEvent(new WordCacheSyncEvent(
-                        WordType.ALLOW,
-                        SyncAction.ADD,
-                        word
-                ));
-            }
-
         } catch (Exception ex) {
             throw new AdminException(ErrorCode.ALLOW_WORD_CREATE_FAILED);
+        }
+        if (requestDto.isUsed()) {
+            publishAllowEvent(SyncAction.ADD, word, ErrorCode.ALLOW_WORD_CREATE_FAILED);
         }
 
         return new AllowWordResponseDto(
@@ -105,15 +99,11 @@ public class AllowWordServiceImpl implements AllowWordService {
 
         try {
             allowWordRepository.delete(aw);
-            if (aw.isStatus()) {
-                eventPublisher.publishEvent(new WordCacheSyncEvent(
-                        WordType.ALLOW,
-                        SyncAction.REMOVE,
-                        word
-                ));
-            }
         } catch (Exception ex) {
             throw new AdminException(ErrorCode.ALLOW_WORD_DELETE_FAILED);
+        }
+        if (aw.isStatus()) {
+            publishAllowEvent(SyncAction.REMOVE, word, ErrorCode.ALLOW_WORD_DELETE_FAILED);
         }
 
     }
@@ -128,33 +118,28 @@ public class AllowWordServiceImpl implements AllowWordService {
         aw.setStatus(newStatus);
         AllowWord updated = allowWordRepository.save(aw);
 
-        try {
-            if (newStatus) {
-                // 챗봇에 추가
-                eventPublisher.publishEvent(new WordCacheSyncEvent(
-                        WordType.ALLOW,
-                        SyncAction.ADD,
-                        updated.getWord()
-                ));
-
-            } else {
-                // 챗봇에서 삭제
-                eventPublisher.publishEvent(new WordCacheSyncEvent(
-                        WordType.ALLOW,
-                        SyncAction.REMOVE,
-                        updated.getWord()
-                ));
-
-            }
-
-        } catch (Exception ex) {
-            throw new AdminException(ErrorCode.ALLOW_WORD_UPDATE_FAILED);
-        }
+        publishAllowEvent(
+                newStatus ? SyncAction.ADD : SyncAction.REMOVE,
+                updated.getWord(),
+                ErrorCode.ALLOW_WORD_UPDATE_FAILED
+        );
 
         return new AllowWordResponseDto(
                 updated.getId(),
                 updated.getWord(),
                 updated.isStatus()
         );
+    }
+
+    private void publishAllowEvent(SyncAction action, String word, ErrorCode errorCode) {
+        try {
+            eventPublisher.publishEvent(new WordCacheSyncEvent(
+                    WordType.ALLOW,
+                    action,
+                    word
+            ));
+        } catch (Exception ex) {
+            throw new AdminException(errorCode);
+        }
     }
 }
