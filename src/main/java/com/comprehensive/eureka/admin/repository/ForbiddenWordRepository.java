@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,4 +20,6 @@ public interface ForbiddenWordRepository extends JpaRepository<ForbiddenWord, Lo
     Optional<Long> findIdByWord(@Param("word") String word);
 
     boolean existsByWord(String word);
+
+    List<ForbiddenWord> findByStatusAndWordIn(boolean status, Collection<String> words);
 }

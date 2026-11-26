@@ -1,6 +1,7 @@
 package com.comprehensive.eureka.admin.repository;
 
 import com.comprehensive.eureka.admin.entity.AllowWord;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,4 +12,5 @@ public interface AllowWordRepository extends JpaRepository<AllowWord, Long> {
     List<AllowWord> findByStatus(boolean status);
     Optional<List<AllowWord>> findByStatusAndWord(boolean status, String word);
     Optional<AllowWord> findByWord(String word);
+    List<AllowWord> findByStatusAndWordIn(boolean status, Collection<String> words);
 }
