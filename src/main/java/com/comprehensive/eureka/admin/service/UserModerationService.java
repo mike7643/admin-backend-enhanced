@@ -1,5 +1,6 @@
 package com.comprehensive.eureka.admin.service;
 
+import com.comprehensive.eureka.admin.client.UserStatusClient;
 import com.comprehensive.eureka.admin.dto.request.UpdateUserStatusRequestDto;
 import com.comprehensive.eureka.admin.enums.Status;
 import com.comprehensive.eureka.admin.exception.AdminException;
@@ -7,7 +8,6 @@ import com.comprehensive.eureka.admin.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class UserModerationService {
 
-    private final WebClient originClient;
+    private final UserStatusClient userStatusClient;
 
     public void applyBanIfThresholdCrossed(Long userId, long beforeCount, long afterCount) {
         int[] thresholds = {1000, 500, 300, 100, 50, 30};
@@ -65,12 +65,7 @@ public class UserModerationService {
                 .build();
 
         try {
-            originClient.put()
-                    .uri("http://localhost:8085/user/status")
-                    .bodyValue(req)
-                    .retrieve()
-                    .bodyToMono(Void.class)
-                    .block();
+            userStatusClient.updateStatus(req);
         } catch (Exception ex) {
             log.error("사용자 차단 API 호출 실패, userId={}", userId, ex);
             throw new AdminException(ErrorCode.USER_STATUS_UPDATE_FAILED);
@@ -97,12 +92,7 @@ public class UserModerationService {
                 .build();
 
         try {
-            originClient.put()
-                    .uri("http://localhost:8085/user/status")
-                    .bodyValue(req)
-                    .retrieve()
-                    .bodyToMono(Void.class)
-                    .block();
+            userStatusClient.updateStatus(req);
         } catch (Exception ex) {
             log.error("사용자 해제 API 호출 실패, userId={}", userId, ex);
             throw new AdminException(ErrorCode.USER_STATUS_UPDATE_FAILED);
