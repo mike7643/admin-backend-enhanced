@@ -12,6 +12,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.comprehensive.eureka.admin.service.wordevent.SyncAction;
+import com.comprehensive.eureka.admin.service.wordevent.WordCacheSyncEvent;
+import com.comprehensive.eureka.admin.service.wordevent.WordType;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
@@ -254,44 +257,34 @@ class ForbiddenWordServiceImplTest {
     }
 
     @Test
-    @DisplayName("toggleForbiddenWordStatus: Redis 추가 중 예외 발생")
-    void toggleForbiddenWordStatus_RedisAddThrows() {
+    @DisplayName("toggleForbiddenWordStatus: 활성화 시 Redis 추가 이벤트 발행")
+    void toggleForbiddenWordStatus_PublishesAddEvent() {
         // given
-        ForbiddenWord fw = new ForbiddenWord(ID, WORD, false);
-        given(forbiddenWordRepository.findById(ID)).willReturn(Optional.of(fw));
-        given(forbiddenWordRepository.save(any())).willAnswer(inv -> {
-            ForbiddenWord u = inv.getArgument(0);
-            u.setStatus(true);
-            return u;
-        });
-        willThrow(new RuntimeException("redis error"))
-                .given(eventPublisher).publishEvent(any(Object.class));
+        ForbiddenWord entity = new ForbiddenWord(ID, WORD, false);
+        given(forbiddenWordRepository.findById(ID)).willReturn(Optional.of(entity));
+        given(forbiddenWordRepository.save(any())).willAnswer(inv -> inv.getArgument(0));
 
-        // when / then
-        assertThatThrownBy(() -> service.toggleForbiddenWordStatus(ID))
-                .isInstanceOf(AdminException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.FORBIDDEN_WORD_CHATBOT_ADD_FAILED);
+        // when
+        service.toggleForbiddenWordStatus(ID);
+
+        // then
+        then(eventPublisher).should().publishEvent(
+                new WordCacheSyncEvent(WordType.FORBIDDEN, SyncAction.ADD, WORD));
     }
 
     @Test
-    @DisplayName("toggleForbiddenWordStatus: Redis 제거 중 예외 발생")
-    void toggleForbiddenWordStatus_RedisRemoveThrows() {
+    @DisplayName("toggleForbiddenWordStatus: 비활성화 시 Redis 제거 이벤트 발행")
+    void toggleForbiddenWordStatus_PublishesRemoveEvent() {
         // given
-        ForbiddenWord fw = new ForbiddenWord(ID, WORD, true);
-        given(forbiddenWordRepository.findById(ID)).willReturn(Optional.of(fw));
-        given(forbiddenWordRepository.save(any())).willAnswer(inv -> {
-            ForbiddenWord u = inv.getArgument(0);
-            u.setStatus(false);
-            return u;
-        });
-        willThrow(new RuntimeException("redis error"))
-                .given(eventPublisher).publishEvent(any(Object.class));
+        ForbiddenWord entity = new ForbiddenWord(ID, WORD, true);
+        given(forbiddenWordRepository.findById(ID)).willReturn(Optional.of(entity));
+        given(forbiddenWordRepository.save(any())).willAnswer(inv -> inv.getArgument(0));
 
-        // when / then
-        assertThatThrownBy(() -> service.toggleForbiddenWordStatus(ID))
-                .isInstanceOf(AdminException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.FORBIDDEN_WORD_CHATBOT_DELETE_FAILED);
+        // when
+        service.toggleForbiddenWordStatus(ID);
+
+        // then
+        then(eventPublisher).should().publishEvent(
+                new WordCacheSyncEvent(WordType.FORBIDDEN, SyncAction.REMOVE, WORD));
     }
 }

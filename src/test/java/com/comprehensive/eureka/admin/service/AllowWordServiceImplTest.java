@@ -12,6 +12,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.comprehensive.eureka.admin.service.wordevent.SyncAction;
+import com.comprehensive.eureka.admin.service.wordevent.WordCacheSyncEvent;
+import com.comprehensive.eureka.admin.service.wordevent.WordType;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
@@ -254,44 +257,34 @@ class AllowWordServiceImplTest {
     }
 
     @Test
-    @DisplayName("toggleAllowWordStatus: Redis 추가 중 예외 발생")
-    void toggleAllowWordStatus_RedisAddThrows() {
+    @DisplayName("toggleAllowWordStatus: 활성화 시 Redis 추가 이벤트 발행")
+    void toggleAllowWordStatus_PublishesAddEvent() {
         // given
-        AllowWord aw = new AllowWord(ID, WORD, false);
-        given(allowWordRepository.findById(ID)).willReturn(Optional.of(aw));
-        given(allowWordRepository.save(any())).willAnswer(inv -> {
-            AllowWord u = inv.getArgument(0);
-            u.setStatus(true);
-            return u;
-        });
-        willThrow(new RuntimeException("redis error"))
-                .given(eventPublisher).publishEvent(any(Object.class));
+        AllowWord entity = new AllowWord(ID, WORD, false);
+        given(allowWordRepository.findById(ID)).willReturn(Optional.of(entity));
+        given(allowWordRepository.save(any())).willAnswer(inv -> inv.getArgument(0));
 
-        // when / then
-        assertThatThrownBy(() -> service.toggleAllowWordStatus(ID))
-                .isInstanceOf(AdminException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.ALLOW_WORD_UPDATE_FAILED);
+        // when
+        service.toggleAllowWordStatus(ID);
+
+        // then
+        then(eventPublisher).should().publishEvent(
+                new WordCacheSyncEvent(WordType.ALLOW, SyncAction.ADD, WORD));
     }
 
     @Test
-    @DisplayName("toggleAllowWordStatus: Redis 제거 중 예외 발생")
-    void toggleAllowWordStatus_RedisRemoveThrows() {
+    @DisplayName("toggleAllowWordStatus: 비활성화 시 Redis 제거 이벤트 발행")
+    void toggleAllowWordStatus_PublishesRemoveEvent() {
         // given
-        AllowWord aw = new AllowWord(ID, WORD, true);
-        given(allowWordRepository.findById(ID)).willReturn(Optional.of(aw));
-        given(allowWordRepository.save(any())).willAnswer(inv -> {
-            AllowWord u = inv.getArgument(0);
-            u.setStatus(false);
-            return u;
-        });
-        willThrow(new RuntimeException("redis error"))
-                .given(eventPublisher).publishEvent(any(Object.class));
+        AllowWord entity = new AllowWord(ID, WORD, true);
+        given(allowWordRepository.findById(ID)).willReturn(Optional.of(entity));
+        given(allowWordRepository.save(any())).willAnswer(inv -> inv.getArgument(0));
 
-        // when / then
-        assertThatThrownBy(() -> service.toggleAllowWordStatus(ID))
-                .isInstanceOf(AdminException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.ALLOW_WORD_UPDATE_FAILED);
+        // when
+        service.toggleAllowWordStatus(ID);
+
+        // then
+        then(eventPublisher).should().publishEvent(
+                new WordCacheSyncEvent(WordType.ALLOW, SyncAction.REMOVE, WORD));
     }
 }
