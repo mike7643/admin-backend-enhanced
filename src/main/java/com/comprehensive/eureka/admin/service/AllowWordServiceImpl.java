@@ -26,6 +26,7 @@ public class AllowWordServiceImpl implements AllowWordService {
 
 
     @Override
+    @Transactional
     public AllowWordResponseDto addAllowWord(AllowWordRequestDto requestDto) {
         String word = requestDto.getWord().trim();
 
@@ -46,7 +47,7 @@ public class AllowWordServiceImpl implements AllowWordService {
             throw new AdminException(ErrorCode.ALLOW_WORD_CREATE_FAILED);
         }
         if (requestDto.isUsed()) {
-            publishAllowEvent(SyncAction.ADD, word, ErrorCode.ALLOW_WORD_CREATE_FAILED);
+            publishAllowEvent(SyncAction.ADD, word);
         }
 
         return new AllowWordResponseDto(
@@ -103,7 +104,7 @@ public class AllowWordServiceImpl implements AllowWordService {
             throw new AdminException(ErrorCode.ALLOW_WORD_DELETE_FAILED);
         }
         if (aw.isStatus()) {
-            publishAllowEvent(SyncAction.REMOVE, word, ErrorCode.ALLOW_WORD_DELETE_FAILED);
+            publishAllowEvent(SyncAction.REMOVE, word);
         }
 
     }
@@ -118,11 +119,7 @@ public class AllowWordServiceImpl implements AllowWordService {
         aw.setStatus(newStatus);
         AllowWord updated = allowWordRepository.save(aw);
 
-        publishAllowEvent(
-                newStatus ? SyncAction.ADD : SyncAction.REMOVE,
-                updated.getWord(),
-                ErrorCode.ALLOW_WORD_UPDATE_FAILED
-        );
+        publishAllowEvent(newStatus ? SyncAction.ADD : SyncAction.REMOVE, updated.getWord());
 
         return new AllowWordResponseDto(
                 updated.getId(),
@@ -131,15 +128,11 @@ public class AllowWordServiceImpl implements AllowWordService {
         );
     }
 
-    private void publishAllowEvent(SyncAction action, String word, ErrorCode errorCode) {
-        try {
-            eventPublisher.publishEvent(new WordCacheSyncEvent(
-                    WordType.ALLOW,
-                    action,
-                    word
-            ));
-        } catch (Exception ex) {
-            throw new AdminException(errorCode);
-        }
+    /**
+     * Redis 반영은 커밋 이후 리스너에서 처리되므로, 반드시 트랜잭션 안에서 발행해야 한다.
+     * 트랜잭션 밖에서 발행하면 AFTER_COMMIT 리스너가 실행되지 않고 이벤트가 버려진다.
+     */
+    private void publishAllowEvent(SyncAction action, String word) {
+        eventPublisher.publishEvent(new WordCacheSyncEvent(WordType.ALLOW, action, word));
     }
 }

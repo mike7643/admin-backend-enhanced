@@ -86,7 +86,7 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
             throw new AdminException(ErrorCode.FORBIDDEN_WORD_CREATE_FAILED);
         }
         if (requestDto.isUsed()) {
-            publishForbiddenEvent(SyncAction.ADD, word, ErrorCode.FORBIDDEN_WORD_CREATE_FAILED);
+            publishForbiddenEvent(SyncAction.ADD, word);
         }
 
         return new ForbiddenWordResponseDto(
@@ -114,7 +114,7 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
             throw new AdminException(ErrorCode.FORBIDDEN_WORD_DELETE_FAILED);
         }
         if (fw.isStatus()) {
-            publishForbiddenEvent(SyncAction.REMOVE, word, ErrorCode.FORBIDDEN_WORD_DELETE_FAILED);
+            publishForbiddenEvent(SyncAction.REMOVE, word);
         }
     }
 
@@ -132,11 +132,7 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
         fw.setStatus(newStatus);
         ForbiddenWord updated = forbiddenWordRepository.save(fw);
 
-        publishForbiddenEvent(
-                newStatus ? SyncAction.ADD : SyncAction.REMOVE,
-                updated.getWord(),
-                newStatus ? ErrorCode.FORBIDDEN_WORD_CHATBOT_ADD_FAILED : ErrorCode.FORBIDDEN_WORD_CHATBOT_DELETE_FAILED
-        );
+        publishForbiddenEvent(newStatus ? SyncAction.ADD : SyncAction.REMOVE, updated.getWord());
 
         return new ForbiddenWordResponseDto(
                 updated.getId(),
@@ -145,15 +141,10 @@ public class ForbiddenWordServiceImpl implements ForbiddenWordService {
         );
     }
 
-    private void publishForbiddenEvent(SyncAction action, String word, ErrorCode errorCode) {
-        try {
-            eventPublisher.publishEvent(new WordCacheSyncEvent(
-                    WordType.FORBIDDEN,
-                    action,
-                    word
-            ));
-        } catch (Exception ex) {
-            throw new AdminException(errorCode);
-        }
+    /**
+     * Redis 반영은 커밋 이후 리스너에서 처리되므로, 반드시 트랜잭션 안에서 발행해야 한다.
+     */
+    private void publishForbiddenEvent(SyncAction action, String word) {
+        eventPublisher.publishEvent(new WordCacheSyncEvent(WordType.FORBIDDEN, action, word));
     }
 }
