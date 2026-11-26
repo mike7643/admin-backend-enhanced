@@ -7,7 +7,11 @@ import com.comprehensive.eureka.admin.repository.UserForbiddenWordsChatRepositor
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
+/**
+ * 위반 기록 삭제 → 재집계 → 해제 판단. 등록과 같은 사용자 락을 사용하며, 커밋 이후에 락을 해제한다.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -16,29 +20,38 @@ public class DeleteForbiddenWordsChatUseCase {
     private final UserForbiddenWordsChatRepository chatRepository;
     private final UserLockService userLockService;
     private final UserModerationService userModerationService;
+    private final TransactionTemplate transactionTemplate;
 
     public void execute(Long chatLogId) {
         UserForbiddenWordsChat record = chatRepository.findById(chatLogId)
                 .orElseThrow(() -> new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_RETRIEVE_FAILED));
         Long userId = record.getUserId();
 
-        userLockService.executeWithUserLock(userId, () -> {
-            try {
-                chatRepository.deleteById(chatLogId);
-            } catch (Exception ex) {
-                log.error("금칙어 로그 삭제 실패, id={}", chatLogId, ex);
-                throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_DELETE_FAILED);
-            }
+        userLockService.executeWithUserLock(userId,
+                () -> transactionTemplate.executeWithoutResult(status -> deleteAndModerate(chatLogId, userId)));
+    }
 
-            long afterCount;
-            try {
-                afterCount = chatRepository.countByUserId(userId);
-            } catch (Exception ex) {
-                log.error("위반 횟수 집계 실패, userId={}", userId, ex);
-                throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_AGGREGATE_FAILED);
-            }
-            long beforeCount = afterCount + 1;
-            userModerationService.applyUnbanIfThresholdDropped(userId, beforeCount, afterCount);
-        });
+    private void deleteAndModerate(Long chatLogId, Long userId) {
+        if (!chatRepository.existsById(chatLogId)) {
+            // 락 대기 중 다른 요청이 먼저 삭제한 경우
+            throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_RETRIEVE_FAILED);
+        }
+        try {
+            chatRepository.deleteById(chatLogId);
+            chatRepository.flush();
+        } catch (Exception ex) {
+            log.error("금칙어 로그 삭제 실패, id={}", chatLogId, ex);
+            throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_DELETE_FAILED);
+        }
+
+        long afterCount;
+        try {
+            afterCount = chatRepository.countByUserId(userId);
+        } catch (Exception ex) {
+            log.error("위반 횟수 집계 실패, userId={}", userId, ex);
+            throw new AdminException(ErrorCode.USER_FORBIDDEN_WORDS_CHAT_AGGREGATE_FAILED);
+        }
+        long beforeCount = afterCount + 1;
+        userModerationService.applyUnbanIfThresholdDropped(userId, beforeCount, afterCount);
     }
 }

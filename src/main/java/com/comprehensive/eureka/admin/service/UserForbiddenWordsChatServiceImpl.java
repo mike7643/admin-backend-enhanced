@@ -10,6 +10,7 @@ import com.comprehensive.eureka.admin.repository.UserForbiddenWordsChatRepositor
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
@@ -51,8 +52,12 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 트랜잭션은 UseCase 내부에서 락을 잡은 뒤 시작한다.
+     * 여기서 트랜잭션을 열면 락 해제가 커밋보다 먼저 일어나 동시 요청의 누적 건수 판단이 어긋난다.
+     */
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void registersUserBadWordsChat(UserForbiddenWordsChatCreateRequestDto request) {
         registerForbiddenWordsChatUseCase.execute(request);
     }
@@ -68,7 +73,7 @@ public class UserForbiddenWordsChatServiceImpl implements UserForbiddenWordsChat
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void deleteAndProcess(Long chatLogId) {
         deleteForbiddenWordsChatUseCase.execute(chatLogId);
     }
