@@ -3,6 +3,8 @@ package com.comprehensive.eureka.admin.integration;
 import com.comprehensive.eureka.admin.dto.AllowWordRequestDto;
 import com.comprehensive.eureka.admin.dto.request.ForbiddenWordRequestDto;
 import com.comprehensive.eureka.admin.dto.response.ForbiddenWordResponseDto;
+import com.comprehensive.eureka.admin.entity.ForbiddenWord;
+import com.comprehensive.eureka.admin.redis.RedisSynchronizer;
 import com.comprehensive.eureka.admin.repository.AllowWordRepository;
 import com.comprehensive.eureka.admin.repository.ForbiddenWordRepository;
 import com.comprehensive.eureka.admin.service.AllowWordService;
@@ -29,6 +31,7 @@ class WordCacheSyncIntegrationTest extends IntegrationTestSupport {
     @Autowired private AllowWordRepository allowWordRepository;
     @Autowired private StringRedisTemplate redisTemplate;
     @Autowired private TransactionTemplate transactionTemplate;
+    @Autowired private RedisSynchronizer redisSynchronizer;
 
     @BeforeEach
     void cleanUp() {
@@ -79,5 +82,20 @@ class WordCacheSyncIntegrationTest extends IntegrationTestSupport {
 
         forbiddenWordService.deleteForbiddenWord(saved.getId());
         assertThat(redisTemplate.opsForSet().isMember(FORBIDDEN_KEY, "토글말")).isFalse();
+    }
+
+    @Test
+    @DisplayName("주기 동기화는 키를 비우지 않고 DB와의 차이만 보정한다")
+    void periodicSyncReconcilesOnlyTheDifference() {
+        // 리스너 실패 등으로 어긋난 상태: DB에만 있는 단어, Redis에만 남은 단어, 양쪽에 모두 있는 단어
+        forbiddenWordRepository.save(ForbiddenWord.builder().word("DB에만").status(true).build());
+        forbiddenWordRepository.save(ForbiddenWord.builder().word("양쪽모두").status(true).build());
+        forbiddenWordRepository.save(ForbiddenWord.builder().word("비활성").status(false).build());
+        redisTemplate.opsForSet().add(FORBIDDEN_KEY, "양쪽모두", "Redis에만", "비활성");
+
+        redisSynchronizer.periodicSync();
+
+        assertThat(redisTemplate.opsForSet().members(FORBIDDEN_KEY))
+                .containsExactlyInAnyOrder("DB에만", "양쪽모두");
     }
 }
